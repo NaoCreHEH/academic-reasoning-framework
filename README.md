@@ -1,32 +1,33 @@
-# ScrumEval
+# Academic Reasoning Framework
 
-Prototype autonome d'une plateforme d'evaluation Scrum pedagogique.
+**A standard for transparent, evidence-based AI reasoning in education and software engineering.**
 
-## Lancer l'application
+Academic Reasoning Framework (ARF) defines how AI systems should observe, infer, explain uncertainty, and produce reviewable recommendations. It is model-agnostic: Claude, GPT, Gemini, local models, and future systems can implement the same reasoning contracts.
 
-Ouvrir `index.html` dans un navigateur.
+## Core principles
 
-L'application ne depend d'aucun serveur et sauvegarde les brouillons dans le stockage local du navigateur.
+1. Every important critique must be justified by evidence.
+2. Conclusions must be traceable to observations.
+3. Uncertainty is part of the answer.
+4. Multiple valid solutions must be acknowledged.
+5. Pedagogical level takes precedence over unnecessary technical sophistication.
 
-## Fonctionnalites incluses
+## Project status
 
-- Selection d'un enseignant, d'un groupe et d'un sprint.
-- Separation entre donnees communes et evaluations privees par enseignant.
-- Panneau commun montrant les membres, le backlog, la story selectionnee et les validations des autres sprints.
-- Validation rapide des User Stories pendant une Sprint Review.
-- Titres visibles, points, coefficients, statuts et commentaires rapides par story.
-- Evaluation collective par criteres.
-- Evaluation quotidienne par etudiant.
-- Dashboard avec score groupe, progression et classement.
-- Ponderations configurables avec controle du total.
-- Exports JSON, CSV, Excel CSV et synthese PDF textuelle.
-- Historique des validations et changements importants.
+ARF is in early specification work. The initial milestones focus on governance, normative RFCs, evidence and feedback contracts, ontology, benchmarks, and reference implementations.
 
-## Donnees persistantes
+## Repository structure
 
-Les donnees sont sauvegardees dans `localStorage` sous la cle `scrumeval-platform-v1`.
-Pour repartir d'un etat vierge, supprimer cette entree dans les outils de developpement du navigateur.
+- `rfcs/`: normative specifications
+- `core/`: model-independent reasoning contracts
+- `ontology/`: shared technical and pedagogical concepts
+- `benchmark/`: evaluation datasets and scoring rules
+- `implementations/`: model-specific adapters
+- `tests/`: conformance and regression tests
+- `docs/`: architecture and contributor documentation
 
-## Prochaine etape technique
+See [ROADMAP.md](ROADMAP.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [CONTRIBUTING.md](CONTRIBUTING.md).
 
-Pour une version multi-enseignants en temps reel, transformer ce prototype en application React/Next.js connectee a une API REST et une base PostgreSQL, avec WebSocket pour synchroniser les donnees communes.
+## License
+
+MIT. See [LICENSE](LICENSE).
