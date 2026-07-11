@@ -20,6 +20,10 @@ class InterpretationValidationError(ValueError):
 class InterpretationConversionError(InterpretationValidationError):
     """Raised when interpretation cannot be converted to a routing request."""
 
+    def __init__(self, signal_kind: object, message: str) -> None:
+        self.signal_kind = signal_kind
+        super().__init__(message)
+
 
 T = TypeVar("T")
 

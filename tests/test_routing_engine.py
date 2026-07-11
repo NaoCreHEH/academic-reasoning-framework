@@ -8,6 +8,7 @@ from core.routing import (
     CapabilityYieldRule,
     RoutingDecision,
     RoutingRequest,
+    RoutingStatus,
     StructuredRoutingEngine,
     build_default_academic_registry,
 )
@@ -74,10 +75,116 @@ class RoutingDecisionTests(unittest.TestCase):
             material_ambiguity=None if primary else "Ambiguous.",
         )
 
+    def test_valid_selected_decision(self) -> None:
+        decision = RoutingDecision(
+            trace=self.trace(primary="a"),
+            status=RoutingStatus.SELECTED,
+            considered_capabilities=("a", "b"),
+        )
+        self.assertIs(decision.status, RoutingStatus.SELECTED)
+
+    def test_selected_without_primary_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary=None),
+                status=RoutingStatus.SELECTED,
+                considered_capabilities=("a", "b"),
+            )
+
+    def test_selected_with_candidates_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary="a"),
+                status=RoutingStatus.SELECTED,
+                considered_capabilities=("a", "b"),
+                candidate_capabilities=("b",),
+            )
+
+    def test_valid_ambiguous_decision(self) -> None:
+        decision = RoutingDecision(
+            trace=self.trace(primary=None),
+            status=RoutingStatus.AMBIGUOUS,
+            considered_capabilities=("a", "b", "c"),
+            candidate_capabilities=("a", "b"),
+        )
+        self.assertEqual(decision.candidate_capabilities, ("a", "b"))
+
+    def test_ambiguous_with_primary_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary="a"),
+                status=RoutingStatus.AMBIGUOUS,
+                considered_capabilities=("a", "b"),
+                candidate_capabilities=("a", "b"),
+            )
+
+    def test_ambiguous_with_fewer_than_two_candidates_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary=None),
+                status=RoutingStatus.AMBIGUOUS,
+                considered_capabilities=("a", "b"),
+                candidate_capabilities=("a",),
+            )
+
+    def test_ambiguous_candidate_outside_considered_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary=None),
+                status=RoutingStatus.AMBIGUOUS,
+                considered_capabilities=("a", "b"),
+                candidate_capabilities=("a", "c"),
+            )
+
+    def test_duplicate_candidates_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary=None),
+                status=RoutingStatus.AMBIGUOUS,
+                considered_capabilities=("a", "b"),
+                candidate_capabilities=("a", "a"),
+            )
+
+    def test_rejected_capability_also_present_as_candidate_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary=None),
+                status=RoutingStatus.AMBIGUOUS,
+                considered_capabilities=("a", "b"),
+                candidate_capabilities=("a", "b"),
+                rejected_capabilities=("b",),
+            )
+
+    def test_valid_no_match_decision(self) -> None:
+        decision = RoutingDecision(
+            trace=self.trace(primary=None),
+            status=RoutingStatus.NO_MATCH,
+            considered_capabilities=("a", "b"),
+        )
+        self.assertIs(decision.status, RoutingStatus.NO_MATCH)
+
+    def test_no_match_with_primary_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary="a"),
+                status=RoutingStatus.NO_MATCH,
+                considered_capabilities=("a", "b"),
+            )
+
+    def test_no_match_with_candidates_rejected(self) -> None:
+        with self.assertRaises(RoutingEngineError):
+            RoutingDecision(
+                trace=self.trace(primary=None),
+                status=RoutingStatus.NO_MATCH,
+                considered_capabilities=("a", "b"),
+                candidate_capabilities=("a", "b"),
+            )
+
     def test_duplicate_considered_capabilities_rejected(self) -> None:
         with self.assertRaises(RoutingEngineError):
             RoutingDecision(
                 trace=self.trace(),
+                status=RoutingStatus.SELECTED,
                 considered_capabilities=("a", "a"),
             )
 
@@ -85,6 +192,7 @@ class RoutingDecisionTests(unittest.TestCase):
         with self.assertRaises(RoutingEngineError):
             RoutingDecision(
                 trace=self.trace(),
+                status=RoutingStatus.SELECTED,
                 considered_capabilities=("a", "b"),
                 rejected_capabilities=("b", "b"),
             )
@@ -93,6 +201,7 @@ class RoutingDecisionTests(unittest.TestCase):
         with self.assertRaises(RoutingEngineError):
             RoutingDecision(
                 trace=self.trace(),
+                status=RoutingStatus.SELECTED,
                 considered_capabilities=("a",),
                 rejected_capabilities=("b",),
             )
@@ -101,12 +210,14 @@ class RoutingDecisionTests(unittest.TestCase):
         with self.assertRaises(RoutingEngineError):
             RoutingDecision(
                 trace=self.trace(primary="b"),
+                status=RoutingStatus.SELECTED,
                 considered_capabilities=("a",),
             )
 
     def test_rejected_capabilities_are_structurally_valid(self) -> None:
         decision = RoutingDecision(
             trace=self.trace(primary="b"),
+            status=RoutingStatus.SELECTED,
             considered_capabilities=("a", "b"),
             rejected_capabilities=("a",),
         )
@@ -143,6 +254,7 @@ class StructuredRoutingEngineTests(unittest.TestCase):
         decision = StructuredRoutingEngine(build_default_academic_registry()).route(
             RoutingRequest(user_objective="create", requested_output="mCq")
         )
+        self.assertIs(decision.status, RoutingStatus.SELECTED)
         self.assertEqual(decision.trace.primary_capability, "exam-generation")
 
     def test_surrounding_whitespace_normalization(self) -> None:
@@ -158,8 +270,17 @@ class StructuredRoutingEngineTests(unittest.TestCase):
                 requested_output="Create an MCQ about Python",
             )
         )
+        self.assertIs(decision.status, RoutingStatus.NO_MATCH)
         self.assertIsNone(decision.trace.primary_capability)
         self.assertIsNotNone(decision.trace.material_ambiguity)
+
+    def test_unique_output_owner_returns_selected(self) -> None:
+        decision = StructuredRoutingEngine(build_default_academic_registry()).route(
+            RoutingRequest(user_objective="create", requested_output="MCQ")
+        )
+        self.assertIs(decision.status, RoutingStatus.SELECTED)
+        self.assertEqual(decision.trace.primary_capability, "exam-generation")
+        self.assertEqual(decision.candidate_capabilities, ())
 
     def test_output_owner_overrides_artifact_owner(self) -> None:
         decision = StructuredRoutingEngine(build_default_academic_registry()).route(
@@ -185,12 +306,14 @@ class StructuredRoutingEngineTests(unittest.TestCase):
         decision = StructuredRoutingEngine(build_default_academic_registry()).route(
             RoutingRequest(user_objective="review", primary_artifact="repository")
         )
+        self.assertIs(decision.status, RoutingStatus.SELECTED)
         self.assertEqual(decision.trace.primary_capability, "architecture-review")
 
     def test_unique_domain_support_selected_only_without_stronger_signal(self) -> None:
         decision = StructuredRoutingEngine(build_default_academic_registry()).route(
             RoutingRequest(user_objective="explain", domain="Python")
         )
+        self.assertIs(decision.status, RoutingStatus.SELECTED)
         self.assertEqual(decision.trace.primary_capability, "python-teaching")
 
     def test_domain_support_does_not_override_output_owner(self) -> None:
@@ -243,6 +366,7 @@ class StructuredRoutingEngineTests(unittest.TestCase):
                 explicit_capability="quantum-professor",
             )
         )
+        self.assertIs(decision.status, RoutingStatus.NO_MATCH)
         self.assertIsNone(decision.trace.primary_capability)
         self.assertIsNotNone(decision.trace.material_ambiguity)
 
@@ -266,38 +390,72 @@ class StructuredRoutingEngineTests(unittest.TestCase):
         )
         self.assertEqual(decision.trace.primary_capability, "uml-analysis")
 
-    def test_duplicate_output_ownership_preserves_ambiguity(self) -> None:
+    def test_duplicate_output_ownership_returns_ambiguous_exact_candidates(self) -> None:
         registry = CapabilityRegistry(
             (
-                capability("a", owned_outputs=("report",)),
-                capability("b", owned_outputs=("report",)),
+                capability("exam-a", owned_outputs=("report",)),
+                capability("exam-b", owned_outputs=("report",)),
+                capability("other", owned_outputs=("summary",)),
             )
         )
         decision = StructuredRoutingEngine(registry).route(
             RoutingRequest(user_objective="create", requested_output="report")
         )
+        self.assertIs(decision.status, RoutingStatus.AMBIGUOUS)
         self.assertIsNone(decision.trace.primary_capability)
+        self.assertEqual(decision.candidate_capabilities, ("exam-a", "exam-b"))
+        self.assertNotIn("other", decision.candidate_capabilities)
         self.assertIsNotNone(decision.trace.material_ambiguity)
 
-    def test_duplicate_artifact_ownership_preserves_ambiguity(self) -> None:
+    def test_duplicate_artifact_ownership_returns_ambiguous_exact_candidates(self) -> None:
         registry = CapabilityRegistry(
             (
-                capability("a", owned_artifacts=("artifact",)),
-                capability("b", owned_artifacts=("artifact",)),
+                capability("review-a", owned_artifacts=("document",)),
+                capability("review-b", owned_artifacts=("document",)),
+                capability("other", owned_artifacts=("diagram",)),
             )
         )
         decision = StructuredRoutingEngine(registry).route(
-            RoutingRequest(user_objective="review", primary_artifact="artifact")
+            RoutingRequest(user_objective="review", primary_artifact="document")
         )
+        self.assertIs(decision.status, RoutingStatus.AMBIGUOUS)
         self.assertIsNone(decision.trace.primary_capability)
+        self.assertEqual(decision.candidate_capabilities, ("review-a", "review-b"))
+        self.assertNotIn("other", decision.candidate_capabilities)
         self.assertIsNotNone(decision.trace.material_ambiguity)
+
+    def test_duplicate_domain_support_returns_ambiguous_exact_candidates(self) -> None:
+        registry = CapabilityRegistry(
+            (
+                capability("teach-a", supported_domains=("Python",)),
+                capability("teach-b", supported_domains=("Python",)),
+                capability("other", supported_domains=("UML",)),
+            )
+        )
+        decision = StructuredRoutingEngine(registry).route(
+            RoutingRequest(user_objective="explain", domain="Python")
+        )
+        self.assertIs(decision.status, RoutingStatus.AMBIGUOUS)
+        self.assertEqual(decision.candidate_capabilities, ("teach-a", "teach-b"))
+        self.assertNotIn("other", decision.candidate_capabilities)
 
     def test_no_ownership_signal_preserves_ambiguity(self) -> None:
         decision = StructuredRoutingEngine(build_default_academic_registry()).route(
             RoutingRequest(user_objective="review")
         )
+        self.assertIs(decision.status, RoutingStatus.NO_MATCH)
         self.assertIsNone(decision.trace.primary_capability)
         self.assertIsNotNone(decision.trace.material_ambiguity)
+
+    def test_material_ambiguity_text_does_not_define_structural_status(self) -> None:
+        decision = StructuredRoutingEngine(build_default_academic_registry()).route(
+            RoutingRequest(
+                user_objective="review",
+                explicit_capability="quantum-professor",
+            )
+        )
+        self.assertIs(decision.status, RoutingStatus.NO_MATCH)
+        self.assertIn("unknown", decision.trace.material_ambiguity or "")
 
     def test_supporting_capabilities_preserve_registry_order(self) -> None:
         registry = CapabilityRegistry(

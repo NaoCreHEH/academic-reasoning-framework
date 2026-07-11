@@ -22,7 +22,7 @@
 
 ## v0.4 — Benchmark
 
-- Routing benchmark
+- Routing benchmark foundation
 - Conformance benchmark
 - Regression harness
 

@@ -6,6 +6,21 @@ It consumes structured request fields and produces an externally reviewable
 
 It does not claim full RFC-0005 conformance.
 
+## Structured Outcome
+
+`RoutingDecision` exposes machine-readable routing outcome data:
+
+- `status` is `SELECTED`, `AMBIGUOUS`, or `NO_MATCH`;
+- `candidate_capabilities` contains only capabilities that matched the
+  unresolved strongest routing signal;
+- `considered_capabilities` contains the full ordered registry consideration
+  set.
+
+`RoutingTrace.material_ambiguity` is human-readable review prose. It may explain
+an ambiguity, an unknown explicit capability, or why no route was selected. It
+MUST NOT be parsed for machine semantics, and its presence does not imply
+`AMBIGUOUS`.
+
 ## Structured Inputs Only
 
 The engine accepts `user_objective`, `primary_artifact`, `requested_output`,
@@ -33,6 +48,11 @@ artifact owner can become a supporting capability.
 Domain support is a fallback primary signal only when no stronger output or
 artifact ownership signal exists. Domain support does not automatically imply
 collaboration, and it does not create a supporting capability by itself.
+
+When more than one capability matches the strongest applicable ownership signal,
+the decision status is `AMBIGUOUS`. The candidates are exactly the matching
+owners or supporters for that signal, in registry insertion order. Unrelated
+considered capabilities are not candidates.
 
 ## Matching
 

@@ -6,6 +6,7 @@ embeddings, or call a model.
 """
 
 from dataclasses import dataclass
+from enum import Enum
 
 from core.ontology import RoutingTrace
 from core.routing.registry import (
@@ -17,6 +18,14 @@ from core.routing.registry import (
 
 class RoutingEngineError(ValueError):
     """Raised when structured routing objects violate local invariants."""
+
+
+class RoutingStatus(str, Enum):
+    """Qualitative routing outcome status."""
+
+    SELECTED = "selected"
+    AMBIGUOUS = "ambiguous"
+    NO_MATCH = "no_match"
 
 
 def _require_non_empty(value: str | None, field_name: str) -> None:
@@ -67,11 +76,14 @@ class RoutingDecision:
     """Structured routing result plus externally reviewable trace."""
 
     trace: RoutingTrace
+    status: RoutingStatus
     considered_capabilities: tuple[str, ...]
+    candidate_capabilities: tuple[str, ...] = ()
     rejected_capabilities: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         _dedupe(self.considered_capabilities, "considered_capabilities")
+        _dedupe(self.candidate_capabilities, "candidate_capabilities")
         _dedupe(self.rejected_capabilities, "rejected_capabilities")
         considered = set(self.considered_capabilities)
         for rejected in self.rejected_capabilities:
@@ -79,11 +91,50 @@ class RoutingDecision:
                 raise RoutingEngineError(
                     f"rejected capability was not considered: {rejected}"
                 )
+            if rejected in self.candidate_capabilities:
+                raise RoutingEngineError(
+                    f"rejected capability cannot be a candidate: {rejected}"
+                )
+        for candidate in self.candidate_capabilities:
+            if candidate not in considered:
+                raise RoutingEngineError(
+                    f"candidate capability was not considered: {candidate}"
+                )
         primary = self.trace.primary_capability
         if primary is not None and primary not in considered:
             raise RoutingEngineError(
                 f"primary capability was not considered: {primary}"
             )
+        if primary is not None and primary in self.candidate_capabilities:
+            raise RoutingEngineError(
+                f"primary capability cannot be a candidate: {primary}"
+            )
+
+        if self.status is RoutingStatus.SELECTED:
+            if primary is None:
+                raise RoutingEngineError("selected routing requires primary capability")
+            if self.candidate_capabilities:
+                raise RoutingEngineError("selected routing cannot have candidates")
+        elif self.status is RoutingStatus.AMBIGUOUS:
+            if primary is not None:
+                raise RoutingEngineError("ambiguous routing cannot have primary capability")
+            if len(self.candidate_capabilities) < 2:
+                raise RoutingEngineError("ambiguous routing requires at least two candidates")
+        elif self.status is RoutingStatus.NO_MATCH:
+            if primary is not None:
+                raise RoutingEngineError("no-match routing cannot have primary capability")
+            if self.candidate_capabilities:
+                raise RoutingEngineError("no-match routing cannot have candidates")
+        else:
+            raise RoutingEngineError(f"unknown routing status: {self.status}")
+
+
+@dataclass(frozen=True)
+class _SelectionOutcome:
+    status: RoutingStatus
+    primary_capability: str | None
+    candidate_capabilities: tuple[str, ...]
+    ambiguity: str | None
 
 
 class StructuredRoutingEngine:
@@ -101,6 +152,8 @@ class StructuredRoutingEngine:
         domain_supporters = self._supporters_by_domain(capabilities, request.domain)
 
         primary: str | None = None
+        status = RoutingStatus.NO_MATCH
+        candidates: tuple[str, ...] = ()
         supporting: list[str] = []
         decisive_signals: list[str] = []
         negative_boundaries: list[str] = []
@@ -125,6 +178,7 @@ class StructuredRoutingEngine:
                 if output_conflict:
                     owner = output_owners[0]
                     primary = owner.identifier
+                    status = RoutingStatus.SELECTED
                     rejected.append(explicit)
                     decisive_signals.append(
                         f"Explicit capability {explicit} was inapplicable; requested output is owned by {owner.identifier}."
@@ -135,6 +189,7 @@ class StructuredRoutingEngine:
                 elif artifact_conflict:
                     owner = artifact_owners[0]
                     primary = owner.identifier
+                    status = RoutingStatus.SELECTED
                     rejected.append(explicit)
                     decisive_signals.append(
                         f"Explicit capability {explicit} was inapplicable; primary artifact is owned by {owner.identifier}."
@@ -144,22 +199,28 @@ class StructuredRoutingEngine:
                     )
                 elif self._capability_has_structural_support(explicit_capability, request):
                     primary = explicit
+                    status = RoutingStatus.SELECTED
                     decisive_signals.append(
                         f"Explicit capability {explicit} was supported by structured request signals."
                     )
                 elif not self._has_any_structural_signal(request):
                     primary = explicit
+                    status = RoutingStatus.SELECTED
                     decisive_signals.append(
                         f"Explicit capability {explicit} was honored with limited applicability evidence."
                     )
 
         if primary is None and ambiguity is None:
-            primary, ambiguity = self._select_from_ownership(
+            outcome = self._select_from_ownership(
                 output_owners,
                 artifact_owners,
                 domain_supporters,
                 decisive_signals,
             )
+            primary = outcome.primary_capability
+            status = outcome.status
+            candidates = outcome.candidate_capabilities
+            ambiguity = outcome.ambiguity
 
         if primary is not None:
             self._add_supporting_capabilities(
@@ -184,7 +245,9 @@ class StructuredRoutingEngine:
         )
         return RoutingDecision(
             trace=trace,
+            status=status,
             considered_capabilities=considered,
+            candidate_capabilities=candidates,
             rejected_capabilities=tuple(rejected),
         )
 
@@ -236,9 +299,14 @@ class StructuredRoutingEngine:
         artifact_owners: tuple[CapabilityDefinition, ...],
         domain_supporters: tuple[CapabilityDefinition, ...],
         decisive_signals: list[str],
-    ) -> tuple[str | None, str | None]:
+    ) -> _SelectionOutcome:
         if len(output_owners) > 1:
-            return None, "Requested output has multiple capability owners."
+            return _SelectionOutcome(
+                status=RoutingStatus.AMBIGUOUS,
+                primary_capability=None,
+                candidate_capabilities=tuple(owner.identifier for owner in output_owners),
+                ambiguity="Requested output has multiple capability owners.",
+            )
         if len(output_owners) == 1:
             owner = output_owners[0]
             if len(artifact_owners) == 1 and artifact_owners[0].identifier != owner.identifier:
@@ -249,25 +317,57 @@ class StructuredRoutingEngine:
                 decisive_signals.append(
                     f"Requested output is owned by {owner.identifier}."
                 )
-            return owner.identifier, None
+            return _SelectionOutcome(
+                status=RoutingStatus.SELECTED,
+                primary_capability=owner.identifier,
+                candidate_capabilities=(),
+                ambiguity=None,
+            )
 
         if len(artifact_owners) > 1:
-            return None, "Primary artifact has multiple capability owners."
+            return _SelectionOutcome(
+                status=RoutingStatus.AMBIGUOUS,
+                primary_capability=None,
+                candidate_capabilities=tuple(owner.identifier for owner in artifact_owners),
+                ambiguity="Primary artifact has multiple capability owners.",
+            )
         if len(artifact_owners) == 1:
             owner = artifact_owners[0]
             decisive_signals.append(f"Primary artifact is owned by {owner.identifier}.")
-            return owner.identifier, None
+            return _SelectionOutcome(
+                status=RoutingStatus.SELECTED,
+                primary_capability=owner.identifier,
+                candidate_capabilities=(),
+                ambiguity=None,
+            )
 
         if len(domain_supporters) > 1:
-            return None, "Structured domain has multiple capability supporters."
+            return _SelectionOutcome(
+                status=RoutingStatus.AMBIGUOUS,
+                primary_capability=None,
+                candidate_capabilities=tuple(
+                    supporter.identifier for supporter in domain_supporters
+                ),
+                ambiguity="Structured domain has multiple capability supporters.",
+            )
         if len(domain_supporters) == 1:
             supporter = domain_supporters[0]
             decisive_signals.append(
                 f"Structured domain is supported by {supporter.identifier}."
             )
-            return supporter.identifier, None
+            return _SelectionOutcome(
+                status=RoutingStatus.SELECTED,
+                primary_capability=supporter.identifier,
+                candidate_capabilities=(),
+                ambiguity=None,
+            )
 
-        return None, "No structured ownership signal was available."
+        return _SelectionOutcome(
+            status=RoutingStatus.NO_MATCH,
+            primary_capability=None,
+            candidate_capabilities=(),
+            ambiguity="No structured ownership signal was available.",
+        )
 
     def _add_supporting_capabilities(
         self,

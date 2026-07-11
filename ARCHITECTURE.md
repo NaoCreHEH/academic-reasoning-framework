@@ -48,6 +48,10 @@ provenance. Conversion to `RoutingRequest` is strict: unresolved routing
 signals are not silently omitted. Free-form interpretation and artifact
 detectors remain unimplemented, and routing remains a separate layer.
 
+The routing regression benchmark exercises the boundary from `InterpretedSubtask`
+to `RoutingRequest` to `StructuredRoutingEngine` to expectation comparison. It
+uses explicit interpretation objects rather than parsing benchmark descriptions.
+
 ### Implementations
 
 Adapters translate the specifications into concrete prompts, skills, agents, or software components.
