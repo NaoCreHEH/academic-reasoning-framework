@@ -105,8 +105,8 @@ rfc_0002_required_terms = [
     "E1 - Direct observation",
     "E2 - Execution or reproduction result",
     "E3 - Measurement",
-    "E4 - Corroborated evidence",
-    "E5 - Derived evidence",
+    "E4 - Derived evidence",
+    "Corroboration is not an E-category",
 ]
 
 for rfc in sorted((ROOT / "rfcs").glob("*.md")):

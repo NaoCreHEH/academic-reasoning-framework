@@ -96,8 +96,9 @@ memory use, coverage percentage, or defect count.
 **Reproduction** is a safe attempt to repeat a behavior, failure, result, or
 measurement under stated conditions.
 
-**Corroboration** is support from more than one relevant evidence item,
-especially when the items have independent sources or methods.
+**Corroboration** is a relationship between two or more relevant evidence items
+that independently or additionally support the same claim. Corroboration does
+not replace the original evidence category of any item.
 
 A **contradiction** exists when relevant evidence items materially conflict.
 
@@ -193,15 +194,19 @@ steps.
   test run, command result, reproduction attempt, or interactive result.
 - **E3 - Measurement:** A quantified result produced by a stated metric and
   method.
-- **E4 - Corroborated evidence:** Multiple relevant evidence items that support
-  the same claim, especially when they use independent sources or methods.
-- **E5 - Derived evidence:** Evidence produced by transforming, aggregating, or
+- **E4 - Derived evidence:** Evidence produced by transforming, aggregating, or
   calculating from source evidence.
 
 Hypotheses and inferences are not evidence categories. Under RFC-0001, an
 inference summarizes how evidence supports a claim, and a hypothesis is a
 plausible but unestablished explanation. Both can use evidence, but neither is
 itself evidence unless it also contains an attributable evidence item.
+
+Corroboration is not an E-category because it describes a relationship among
+evidence items rather than the nature or acquisition of one item. An E1 direct
+observation, E2 execution or reproduction result, E3 measurement, or E4 derived
+evidence item can be corroborated by other relevant evidence items without
+losing its original category.
 
 ### Evidence strength
 
@@ -215,7 +220,9 @@ An artifact SHOULD evaluate evidence strength using the following factors:
   but different issue.
 - **Reproducibility:** whether the evidence can be independently repeated when
   safe and authorized.
-- **Corroboration:** whether independent evidence supports the same claim.
+- **Corroboration:** whether other relevant evidence items independently or
+  additionally support the same claim without replacing the original evidence
+  category of any item.
 - **Provenance:** whether the source and handling history are known and
   trustworthy for the claim.
 - **Scope:** whether the evidence covers the artifact, behavior, version,
