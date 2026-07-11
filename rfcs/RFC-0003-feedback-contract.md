@@ -135,9 +135,9 @@ strength.
 7. Recommendations MUST be proportionate to the finding, evidence, impact, and
    context.
 8. Alternatives SHOULD be presented when several valid corrections exist.
-9. Severity MUST represent consequence, priority, assessment impact, execution
-   failure, security exposure, architectural risk, pedagogical risk, or other
-   relevant stakes, not reviewer annoyance.
+9. Severity MUST represent consequence, assessment impact, execution failure,
+   security exposure, architectural risk, pedagogical risk, or other relevant
+   stakes, not reviewer annoyance or feedback ordering.
 10. Confidence MUST NOT be expressed as an uncalibrated numeric percentage.
 11. Limitations MUST be surfaced when they materially constrain the feedback.
 12. Feedback MUST remain actionable.
@@ -211,9 +211,10 @@ Severity is qualitative. This RFC defines the following severity labels:
 - **Informational:** The item is useful context, praise, clarification, or a
   low-stakes observation.
 
-Severity describes consequence, assessment impact, execution failure, security
-exposure, architectural risk, pedagogical risk, or other relevant stakes.
-Severity is not calculated only from confidence.
+Severity describes consequence or stakes, including assessment impact,
+execution failure, security exposure, architectural risk, pedagogical risk, or
+other relevant stakes. Severity does not define feedback priority and is not
+calculated only from confidence.
 
 High confidence plus a minor issue remains Minor. Low confidence plus a
 potentially severe hypothesis is not automatically Blocking; it may warrant a
@@ -224,8 +225,9 @@ This RFC does not create a numeric severity formula.
 
 ### Feedback priority
 
-Feedback priority is related to severity but not identical. Priority can
-consider:
+Feedback priority describes ordering or emphasis for a specific context or
+objective. Severity can influence priority, but severity does not define
+priority. Priority can consider:
 
 - severity;
 - pedagogical importance;
@@ -234,9 +236,9 @@ consider:
 - recurrence;
 - user objective.
 
-A low-severity issue can have high priority when it blocks a learner's next
-concept. A severe but uncertain hypothesis can have high investigation priority
-without being presented as a confirmed Blocking defect.
+A Minor finding MAY have high priority when it blocks a learner's next concept.
+A severe but uncertain hypothesis MAY have high investigation priority without
+being presented as a confirmed Blocking finding.
 
 ### Confidence labels
 
@@ -526,9 +528,9 @@ conforms when it satisfies the MUST and MUST NOT requirements in this document.
     total architecture failure.
 13. **Hypotheses remain hypothetical:** Potential security issues with
     incomplete evidence are labeled as hypotheses or verification gaps.
-14. **Priority can differ from severity:** A minor beginner concept can be high
-    priority, and a severe uncertain issue can be high investigation priority
-    without being confirmed.
+14. **Priority can differ from severity:** A Minor beginner concept can have
+    high priority, and a severe uncertain hypothesis can have high
+    investigation priority without being a confirmed Blocking finding.
 
 ## Security and misuse considerations
 
