@@ -26,6 +26,11 @@ Reusable, model-independent schemas for evidence, confidence, feedback, routing,
 
 Definitions, observable indicators, exceptions, counter-examples, false positives, and false negatives.
 
+The `core/ontology/` package provides the first machine-readable structural
+primitives for stable RFC concepts. It is limited to data representation and
+validation; it does not implement reasoning, routing execution, or
+model-specific behavior.
+
 ### Implementations
 
 Adapters translate the specifications into concrete prompts, skills, agents, or software components.

@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Core ontology primitives for RFC-backed evidence, feedback, confidence, and routing structures
 - RFC-0005 routing model for capability selection and skill-collision handling
 - RFC-0004 confidence model for qualitative support labels and uncertainty
 - RFC-0003 feedback contract for externally reviewable feedback artifacts
