@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- RFC-0004 confidence model for qualitative support labels and uncertainty
 - RFC-0003 feedback contract for externally reviewable feedback artifacts
 - RFC-0002 evidence model for claim support and evidence handling
 - RFC-0001 reasoning model for academic and software-engineering analysis

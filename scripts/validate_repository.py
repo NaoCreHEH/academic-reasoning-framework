@@ -21,6 +21,7 @@ REQUIRED = {
     "rfcs/RFC-0001-reasoning-model.md",
     "rfcs/RFC-0002-evidence-model.md",
     "rfcs/RFC-0003-feedback-contract.md",
+    "rfcs/RFC-0004-confidence-model.md",
 }
 
 missing = sorted(path for path in REQUIRED if not (ROOT / path).exists())
@@ -83,6 +84,7 @@ rfc_errors = []
 rfc_0001 = ROOT / "rfcs" / "RFC-0001-reasoning-model.md"
 rfc_0002 = ROOT / "rfcs" / "RFC-0002-evidence-model.md"
 rfc_0003 = ROOT / "rfcs" / "RFC-0003-feedback-contract.md"
+rfc_0004 = ROOT / "rfcs" / "RFC-0004-confidence-model.md"
 
 rfc_0002_required_terms = [
     "evidence item",
@@ -139,6 +141,36 @@ rfc_0003_required_terms = [
     "does not define the confidence taxonomy",
 ]
 
+rfc_0004_support_labels = [
+    "Confirmed",
+    "Strongly supported",
+    "Supported",
+    "Plausible",
+    "Speculative",
+]
+
+rfc_0004_required_terms = [
+    "confidence",
+    "confidence label",
+    "confidence basis",
+    "confidence target",
+    "direct support",
+    "corroborated support",
+    "derived support",
+    "limited support",
+    "contradictory support",
+    "material uncertainty",
+    "confidence downgrade",
+    "confidence upgrade",
+    "confidence revision",
+    "confidence boundary",
+    "Unknown",
+    "Not assessed",
+    "Unknown is not Speculative",
+    "Not assessed is not Unknown",
+    "non-confidence state",
+]
+
 for rfc in sorted((ROOT / "rfcs").glob("*.md")):
     try:
         text = rfc.read_text(encoding="utf-8")
@@ -175,6 +207,19 @@ if rfc_0003.exists():
     for term in rfc_0003_required_terms:
         if term.lower() not in lower_text:
             rfc_errors.append(f"{rfc_0003.relative_to(ROOT)} missing term: {term}")
+
+if rfc_0004.exists():
+    text = rfc_0004.read_text(encoding="utf-8")
+    lower_text = text.lower()
+    for term in rfc_0004_required_terms:
+        if term.lower() not in lower_text:
+            rfc_errors.append(f"{rfc_0004.relative_to(ROOT)} missing term: {term}")
+    for label in rfc_0004_support_labels:
+        marker = f"- **{label}:**"
+        if text.count(marker) != 1:
+            rfc_errors.append(
+                f"{rfc_0004.relative_to(ROOT)} must define support label once: {label}"
+            )
 
 if rfc_errors:
     print("RFC validation failed:")
