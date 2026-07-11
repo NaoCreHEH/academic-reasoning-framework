@@ -18,6 +18,7 @@ REQUIRED = {
     ".github/workflows/markdown.yml",
     ".github/workflows/links.yml",
     ".github/workflows/structure.yml",
+    "rfcs/RFC-0001-reasoning-model.md",
 }
 
 missing = sorted(path for path in REQUIRED if not (ROOT / path).exists())
@@ -41,6 +42,71 @@ if missing:
     print("Missing required files:")
     for path in missing:
         print(f"- {path}")
+    sys.exit(1)
+
+required_rfc_sections = [
+    "## Abstract",
+    "## Motivation",
+    "## Scope",
+    "## Definitions",
+    "## Normative requirements",
+    "## Processing model",
+    "## Examples",
+    "## Counter-examples",
+    "## Edge cases",
+    "## Conformance",
+    "## Security and misuse considerations",
+    "## Open questions",
+    "## References",
+]
+
+rfc_0001_required_terms = [
+    "input",
+    "context",
+    "observation",
+    "evidence",
+    "inference",
+    "hypothesis",
+    "conclusion",
+    "recommendation",
+    "uncertainty",
+    "falsifier",
+    "pedagogical context",
+    "reviewability",
+    "anti-pattern",
+]
+
+normative_terms = ["MUST", "MUST NOT", "SHOULD", "SHOULD NOT", "MAY"]
+rfc_errors = []
+rfc_0001 = ROOT / "rfcs" / "RFC-0001-reasoning-model.md"
+
+for rfc in sorted((ROOT / "rfcs").glob("*.md")):
+    try:
+        text = rfc.read_text(encoding="utf-8")
+    except UnicodeDecodeError as error:
+        rfc_errors.append(f"{rfc.relative_to(ROOT)} is not readable as UTF-8: {error}")
+        continue
+
+    for section in required_rfc_sections:
+        if section not in text:
+            rfc_errors.append(f"{rfc.relative_to(ROOT)} missing section: {section}")
+
+    if not any(term in text for term in normative_terms):
+        rfc_errors.append(f"{rfc.relative_to(ROOT)} missing normative language")
+
+if rfc_0001.exists():
+    text = rfc_0001.read_text(encoding="utf-8")
+    lower_text = text.lower()
+    if "## Anti-patterns" not in text:
+        rfc_errors.append(f"{rfc_0001.relative_to(ROOT)} missing section: ## Anti-patterns")
+    for term in rfc_0001_required_terms:
+        if term not in lower_text:
+            rfc_errors.append(f"{rfc_0001.relative_to(ROOT)} missing term: {term}")
+
+if rfc_errors:
+    print("RFC validation failed:")
+    for error in rfc_errors:
+        print(f"- {error}")
     sys.exit(1)
 
 print("Repository structure is valid.")
