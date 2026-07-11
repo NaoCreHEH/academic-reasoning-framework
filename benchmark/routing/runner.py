@@ -3,7 +3,7 @@
 from collections.abc import Iterable
 
 from core.interpretation import InterpretationConversionError, to_routing_request
-from core.routing import RoutingDecision, RoutingStatus, StructuredRoutingEngine
+from core.routing import RoutingStatus, StructuredRoutingEngine
 
 from benchmark.routing.models import (
     RoutingBenchmarkCase,
@@ -51,9 +51,9 @@ def _run_case(
         )
 
     decision = engine.route(request)
-    status = _routing_status(decision)
+    status = decision.status
     capability = decision.trace.primary_capability
-    candidates = _routing_candidates(decision, status)
+    candidates = decision.candidate_capabilities
     passed = (
         case.expected_conversion
         and status == case.expected_status
@@ -70,23 +70,6 @@ def _run_case(
         conversion_error_signal=None,
         diagnostic="passed" if passed else _diagnostic(case, status, capability, candidates),
     )
-
-
-def _routing_status(decision: RoutingDecision) -> RoutingStatus:
-    if decision.trace.primary_capability is not None:
-        return RoutingStatus.SELECTED
-    if "multiple capability owners" in (decision.trace.material_ambiguity or ""):
-        return RoutingStatus.AMBIGUOUS
-    return RoutingStatus.NO_MATCH
-
-
-def _routing_candidates(
-    decision: RoutingDecision,
-    status: RoutingStatus,
-) -> tuple[str, ...]:
-    if status is RoutingStatus.AMBIGUOUS:
-        return decision.considered_capabilities
-    return ()
 
 
 def _diagnostic(

@@ -15,6 +15,11 @@ structured routing behavior, and expected benchmark outcomes.
 It is model-independent. It does not use natural-language parsing, regex
 classification, keyword scoring, embeddings, LLMs, or model-specific behavior.
 
+The benchmark consumes `RoutingDecision.status` and
+`RoutingDecision.candidate_capabilities` directly. It does not parse routing
+trace prose, and it does not treat the full `considered_capabilities` registry
+set as the ambiguous candidate set.
+
 ## Boundary
 
 The benchmark boundary is:
