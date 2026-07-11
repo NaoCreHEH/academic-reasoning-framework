@@ -22,6 +22,7 @@ REQUIRED = {
     "rfcs/RFC-0002-evidence-model.md",
     "rfcs/RFC-0003-feedback-contract.md",
     "rfcs/RFC-0004-confidence-model.md",
+    "rfcs/RFC-0005-routing-model.md",
 }
 
 missing = sorted(path for path in REQUIRED if not (ROOT / path).exists())
@@ -85,6 +86,7 @@ rfc_0001 = ROOT / "rfcs" / "RFC-0001-reasoning-model.md"
 rfc_0002 = ROOT / "rfcs" / "RFC-0002-evidence-model.md"
 rfc_0003 = ROOT / "rfcs" / "RFC-0003-feedback-contract.md"
 rfc_0004 = ROOT / "rfcs" / "RFC-0004-confidence-model.md"
+rfc_0005 = ROOT / "rfcs" / "RFC-0005-routing-model.md"
 
 rfc_0002_required_terms = [
     "evidence item",
@@ -171,6 +173,28 @@ rfc_0004_required_terms = [
     "non-confidence state",
 ]
 
+rfc_0005_required_terms = [
+    "user objective",
+    "primary artifact",
+    "requested output",
+    "capability",
+    "routing candidate",
+    "routing signal",
+    "positive boundary",
+    "negative boundary",
+    "capability ownership",
+    "routing conflict",
+    "ambiguous routing",
+    "compound request",
+    "delegation",
+    "primary capability",
+    "supporting capability",
+    "routing fallback",
+    "routing revision",
+    "routing trace",
+    "Topic keywords MUST NOT be the sole routing basis",
+]
+
 for rfc in sorted((ROOT / "rfcs").glob("*.md")):
     try:
         text = rfc.read_text(encoding="utf-8")
@@ -220,6 +244,13 @@ if rfc_0004.exists():
             rfc_errors.append(
                 f"{rfc_0004.relative_to(ROOT)} must define support label once: {label}"
             )
+
+if rfc_0005.exists():
+    text = rfc_0005.read_text(encoding="utf-8")
+    lower_text = text.lower()
+    for term in rfc_0005_required_terms:
+        if term.lower() not in lower_text:
+            rfc_errors.append(f"{rfc_0005.relative_to(ROOT)} missing term: {term}")
 
 if rfc_errors:
     print("RFC validation failed:")
