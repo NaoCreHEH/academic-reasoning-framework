@@ -4,8 +4,8 @@ The capability registry is the first machine-readable representation of
 RFC-0005 capability ownership and boundaries.
 
 It records which capabilities own particular artifacts or outputs, where their
-positive boundaries apply, and where their negative boundaries require another
-capability to take ownership.
+positive boundaries apply, and where contextual yield rules identify another
+capability that owns a specific neighboring context.
 
 ## Relationship to RFC-0005
 
@@ -27,9 +27,17 @@ diagram evaluation solely because design or coupling language appears.
 
 ## Explicit Yields
 
-Some boundaries explicitly yield to another capability. These relationships are
-represented with `yields_to` identifiers so they can be validated without
-parsing prose.
+Yields are contextual. A yield rule is not global precedence between two
+capabilities, and future routing code must not treat it as an unconditional
+edge.
+
+Each yield rule represents `target_capability`, `context`, and `reason`
+structurally. The target can be validated as a registered capability without
+parsing the prose context or reason.
+
+Boundary prose is still retained because it explains the capability's scope in
+human-readable terms. Some negative boundaries intentionally have no yield rule
+when ownership depends on the requested transformation or artifact context.
 
 ## Non-Routing Scope
 

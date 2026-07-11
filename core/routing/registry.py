@@ -1,7 +1,7 @@
 """Machine-readable capability registry for RFC-0005 ownership boundaries.
 
-The registry records capability ownership and explicit yield relationships. It
-does not perform natural-language routing, keyword scoring, embeddings, or
+The registry records capability ownership and explicit contextual yield rules.
+It does not perform natural-language routing, keyword scoring, embeddings, or
 model-based classification.
 """
 
@@ -34,6 +34,28 @@ def _validate_tuple_values(values: tuple[str, ...], field_name: str) -> None:
 
 
 @dataclass(frozen=True)
+class CapabilityYieldRule:
+    """A contextual capability yield rule."""
+
+    target_capability: str
+    context: str
+    reason: str
+
+    def __post_init__(self) -> None:
+        _require_non_empty(self.target_capability, "target_capability")
+        _require_non_empty(self.context, "context")
+        _require_non_empty(self.reason, "reason")
+
+
+def _validate_yield_rules(rules: tuple[CapabilityYieldRule, ...]) -> None:
+    seen: set[CapabilityYieldRule] = set()
+    for rule in rules:
+        if rule in seen:
+            raise CapabilityRegistryError(f"duplicate yield rule: {rule}")
+        seen.add(rule)
+
+
+@dataclass(frozen=True)
 class CapabilityDefinition:
     """A structural capability boundary definition."""
 
@@ -45,7 +67,7 @@ class CapabilityDefinition:
     owned_artifacts: tuple[str, ...] = ()
     owned_outputs: tuple[str, ...] = ()
     supported_domains: tuple[str, ...] = ()
-    yields_to: tuple[str, ...] = ()
+    yield_rules: tuple[CapabilityYieldRule, ...] = ()
 
     def __post_init__(self) -> None:
         _require_non_empty(self.identifier, "identifier")
@@ -61,7 +83,7 @@ class CapabilityDefinition:
         _validate_tuple_values(self.owned_artifacts, "owned_artifacts")
         _validate_tuple_values(self.owned_outputs, "owned_outputs")
         _validate_tuple_values(self.supported_domains, "supported_domains")
-        _validate_tuple_values(self.yields_to, "yields_to")
+        _validate_yield_rules(self.yield_rules)
 
 
 class CapabilityRegistry:
@@ -95,17 +117,19 @@ class CapabilityRegistry:
 
 
 def validate_registry_references(registry: CapabilityRegistry) -> None:
-    """Validate explicit capability yield references."""
+    """Validate explicit contextual capability yield references."""
 
     for capability in registry:
-        for target in capability.yields_to:
-            if target == capability.identifier:
+        for rule in capability.yield_rules:
+            if rule.target_capability == capability.identifier:
                 raise CapabilityRegistryError(
                     f"capability cannot yield to itself: {capability.identifier}"
                 )
-            if not registry.contains(target):
+            if not registry.contains(rule.target_capability):
                 raise CapabilityRegistryError(
-                    f"capability {capability.identifier} yields to unknown capability: {target}"
+                    "capability "
+                    f"{capability.identifier} yields to unknown capability: "
+                    f"{rule.target_capability}"
                 )
 
 
@@ -130,7 +154,19 @@ def build_default_academic_registry() -> CapabilityRegistry:
                     "sequence diagram",
                     "UML model",
                 ),
-                yields_to=("architecture-review",),
+                yield_rules=(
+                    CapabilityYieldRule(
+                        target_capability="architecture-review",
+                        context=(
+                            "Primary artifact is a repository, codebase, or running "
+                            "system and the objective is architecture assessment."
+                        ),
+                        reason=(
+                            "Repository and running-system architecture are owned "
+                            "by architecture-review."
+                        ),
+                    ),
+                ),
             ),
             CapabilityDefinition(
                 identifier="architecture-review",
@@ -143,7 +179,19 @@ def build_default_academic_registry() -> CapabilityRegistry:
                     "Must not own UML diagram evaluation solely because architecture, design, coupling, or maintainability vocabulary appears.",
                 ),
                 owned_artifacts=("repository", "codebase", "running system"),
-                yields_to=("uml-analysis",),
+                yield_rules=(
+                    CapabilityYieldRule(
+                        target_capability="uml-analysis",
+                        context=(
+                            "Primary artifact is a UML diagram or UML model and "
+                            "the objective is modeling evaluation."
+                        ),
+                        reason=(
+                            "UML modeling coherence and notation are owned by "
+                            "uml-analysis."
+                        ),
+                    ),
+                ),
             ),
             CapabilityDefinition(
                 identifier="pfe-review",
@@ -162,7 +210,6 @@ def build_default_academic_registry() -> CapabilityRegistry:
                     "statement of work",
                     "academic specification",
                 ),
-                yields_to=("architecture-review",),
             ),
             CapabilityDefinition(
                 identifier="exam-generation",
@@ -181,7 +228,17 @@ def build_default_academic_registry() -> CapabilityRegistry:
                     "rubric",
                     "assessment instrument",
                 ),
-                yields_to=("python-teaching",),
+                yield_rules=(
+                    CapabilityYieldRule(
+                        target_capability="python-teaching",
+                        context=(
+                            "Primary artifact is Python learner code or a Python "
+                            "submission and the requested output is learner-facing "
+                            "correction or pedagogical feedback."
+                        ),
+                        reason="Python learner correction is owned by python-teaching.",
+                    ),
+                ),
             ),
             CapabilityDefinition(
                 identifier="python-teaching",
@@ -198,7 +255,20 @@ def build_default_academic_registry() -> CapabilityRegistry:
                     "Python exercise",
                     "Python submission",
                 ),
-                yields_to=("exam-generation",),
+                yield_rules=(
+                    CapabilityYieldRule(
+                        target_capability="exam-generation",
+                        context=(
+                            "Requested output is an MCQ, QCM, examination, oral "
+                            "question set, question bank, rubric, grading "
+                            "instrument, or assessment instrument."
+                        ),
+                        reason=(
+                            "Assessment instrument production is owned by "
+                            "exam-generation."
+                        ),
+                    ),
+                ),
             ),
         )
     )

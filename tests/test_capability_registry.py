@@ -4,6 +4,7 @@ from core.routing import (
     CapabilityDefinition,
     CapabilityRegistry,
     CapabilityRegistryError,
+    CapabilityYieldRule,
     UnknownCapabilityError,
     build_default_academic_registry,
     validate_registry_references,
@@ -29,7 +30,13 @@ class CapabilityDefinitionTests(unittest.TestCase):
             owned_artifacts=("repository",),
             owned_outputs=("feedback",),
             supported_domains=("software engineering",),
-            yields_to=("other-capability",),
+            yield_rules=(
+                CapabilityYieldRule(
+                    target_capability="other-capability",
+                    context="A specific adjacent context applies.",
+                    reason="The other capability owns that context.",
+                ),
+            ),
         )
         self.assertEqual(item.identifier, "capability")
         self.assertEqual(item.owned_artifacts, ("repository",))
@@ -132,26 +139,143 @@ class CapabilityRegistryTests(unittest.TestCase):
         self.assertEqual(len(registry), 2)
 
 
+class CapabilityYieldRuleTests(unittest.TestCase):
+    def test_valid_contextual_yield_rule(self) -> None:
+        rule = CapabilityYieldRule(
+            target_capability="exam-generation",
+            context="Requested output is an assessment instrument.",
+            reason="Assessment instrument production is owned elsewhere.",
+        )
+        self.assertEqual(rule.target_capability, "exam-generation")
+
+    def test_blank_target_rejected(self) -> None:
+        with self.assertRaises(CapabilityRegistryError):
+            CapabilityYieldRule(
+                target_capability=" ",
+                context="Specific context.",
+                reason="Specific reason.",
+            )
+
+    def test_blank_context_rejected(self) -> None:
+        with self.assertRaises(CapabilityRegistryError):
+            CapabilityYieldRule(
+                target_capability="exam-generation",
+                context=" ",
+                reason="Specific reason.",
+            )
+
+    def test_blank_reason_rejected(self) -> None:
+        with self.assertRaises(CapabilityRegistryError):
+            CapabilityYieldRule(
+                target_capability="exam-generation",
+                context="Specific context.",
+                reason=" ",
+            )
+
+    def test_exact_duplicate_yield_rule_rejected(self) -> None:
+        rule = CapabilityYieldRule(
+            target_capability="exam-generation",
+            context="Requested output is an assessment instrument.",
+            reason="Assessment instrument production is owned elsewhere.",
+        )
+        with self.assertRaises(CapabilityRegistryError):
+            capability("a", yield_rules=(rule, rule))
+
+    def test_same_target_with_different_contexts_accepted(self) -> None:
+        first = CapabilityYieldRule(
+            target_capability="exam-generation",
+            context="Requested output is an MCQ.",
+            reason="MCQ production is owned by exam-generation.",
+        )
+        second = CapabilityYieldRule(
+            target_capability="exam-generation",
+            context="Requested output is a rubric.",
+            reason="Rubric production is owned by exam-generation.",
+        )
+        item = capability("a", yield_rules=(first, second))
+        self.assertEqual(item.yield_rules, (first, second))
+
+    def test_multiple_contexts_to_same_target_regression(self) -> None:
+        first = CapabilityYieldRule(
+            target_capability="architecture-review",
+            context="Primary artifact is a repository.",
+            reason="Repository architecture is owned by architecture-review.",
+        )
+        second = CapabilityYieldRule(
+            target_capability="architecture-review",
+            context="Primary artifact is a running system.",
+            reason="Running-system architecture is owned by architecture-review.",
+        )
+        registry = CapabilityRegistry(
+            (
+                capability("uml-analysis", yield_rules=(first, second)),
+                capability("architecture-review"),
+            )
+        )
+        validate_registry_references(registry)
+        self.assertEqual(len(registry.get("uml-analysis").yield_rules), 2)
+
+
 class RegistryReferenceValidationTests(unittest.TestCase):
-    def test_yields_to_unknown_capability_rejected(self) -> None:
-        registry = CapabilityRegistry((capability("a", yields_to=("missing",)),))
+    def test_unknown_target_capability_rejected(self) -> None:
+        registry = CapabilityRegistry(
+            (
+                capability(
+                    "a",
+                    yield_rules=(
+                        CapabilityYieldRule(
+                            target_capability="missing",
+                            context="Specific context.",
+                            reason="Specific reason.",
+                        ),
+                    ),
+                ),
+            )
+        )
         with self.assertRaises(CapabilityRegistryError):
             validate_registry_references(registry)
 
     def test_self_yield_rejected(self) -> None:
-        registry = CapabilityRegistry((capability("a", yields_to=("a",)),))
+        registry = CapabilityRegistry(
+            (
+                capability(
+                    "a",
+                    yield_rules=(
+                        CapabilityYieldRule(
+                            target_capability="a",
+                            context="Specific context.",
+                            reason="Specific reason.",
+                        ),
+                    ),
+                ),
+            )
+        )
         with self.assertRaises(CapabilityRegistryError):
             validate_registry_references(registry)
 
-    def test_duplicate_yield_targets_rejected(self) -> None:
-        with self.assertRaises(CapabilityRegistryError):
-            capability("a", yields_to=("b", "b"))
-
-    def test_mutual_yields_allowed(self) -> None:
+    def test_mutual_contextual_yields_allowed(self) -> None:
         registry = CapabilityRegistry(
             (
-                capability("a", yields_to=("b",)),
-                capability("b", yields_to=("a",)),
+                capability(
+                    "a",
+                    yield_rules=(
+                        CapabilityYieldRule(
+                            target_capability="b",
+                            context="Context owned by b.",
+                            reason="b owns that context.",
+                        ),
+                    ),
+                ),
+                capability(
+                    "b",
+                    yield_rules=(
+                        CapabilityYieldRule(
+                            target_capability="a",
+                            context="Context owned by a.",
+                            reason="a owns that context.",
+                        ),
+                    ),
+                ),
             )
         )
         validate_registry_references(registry)
@@ -175,11 +299,6 @@ class DefaultAcademicRegistryTests(unittest.TestCase):
         registry = build_default_academic_registry()
         validate_registry_references(registry)
         self.assertEqual(len(registry), 5)
-        self.assertEqual(registry.get("uml-analysis").yields_to, ("architecture-review",))
-        self.assertEqual(registry.get("architecture-review").yields_to, ("uml-analysis",))
-        self.assertEqual(registry.get("pfe-review").yields_to, ("architecture-review",))
-        self.assertEqual(registry.get("exam-generation").yields_to, ("python-teaching",))
-        self.assertEqual(registry.get("python-teaching").yields_to, ("exam-generation",))
 
     def test_default_registry_owns_expected_artifacts_and_outputs(self) -> None:
         registry = build_default_academic_registry()
@@ -188,6 +307,44 @@ class DefaultAcademicRegistryTests(unittest.TestCase):
         self.assertIn("PFE report", registry.get("pfe-review").owned_artifacts)
         self.assertIn("MCQ", registry.get("exam-generation").owned_outputs)
         self.assertIn("Python student code", registry.get("python-teaching").owned_artifacts)
+
+    def test_default_uml_contextual_yield_is_correct(self) -> None:
+        rule = build_default_academic_registry().get("uml-analysis").yield_rules[0]
+        self.assertEqual(rule.target_capability, "architecture-review")
+        self.assertIn("repository, codebase, or running system", rule.context)
+        self.assertIn("architecture-review", rule.reason)
+
+    def test_default_architecture_contextual_yield_is_correct(self) -> None:
+        rule = build_default_academic_registry().get("architecture-review").yield_rules[0]
+        self.assertEqual(rule.target_capability, "uml-analysis")
+        self.assertIn("UML diagram or UML model", rule.context)
+        self.assertIn("uml-analysis", rule.reason)
+
+    def test_pfe_review_has_no_generic_architecture_yield(self) -> None:
+        registry = build_default_academic_registry()
+        self.assertEqual(registry.get("pfe-review").yield_rules, ())
+        self.assertIn(
+            "repository code review",
+            registry.get("pfe-review").negative_boundaries[0],
+        )
+
+    def test_exam_generation_contextual_yield_to_python_teaching_is_correct(self) -> None:
+        rule = build_default_academic_registry().get("exam-generation").yield_rules[0]
+        self.assertEqual(rule.target_capability, "python-teaching")
+        self.assertIn("Python learner code", rule.context)
+        self.assertIn("python-teaching", rule.reason)
+
+    def test_python_teaching_contextual_yield_to_exam_generation_is_correct(self) -> None:
+        rule = build_default_academic_registry().get("python-teaching").yield_rules[0]
+        self.assertEqual(rule.target_capability, "exam-generation")
+        self.assertIn("assessment instrument", rule.context)
+        self.assertIn("exam-generation", rule.reason)
+
+    def test_registry_exposes_no_bare_yield_field(self) -> None:
+        registry = build_default_academic_registry()
+        old_field_name = "yields" + "_to"
+        for capability_item in registry:
+            self.assertFalse(hasattr(capability_item, old_field_name))
 
     def test_default_registry_contains_no_numeric_routing_weights_or_scores(self) -> None:
         registry = build_default_academic_registry()
