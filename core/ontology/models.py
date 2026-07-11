@@ -63,6 +63,15 @@ class EvidenceItem:
                     "derived_from is required for DERIVED_EVIDENCE"
                 )
             require_non_empty(self.transformation, "transformation")
+        else:
+            if self.derived_from:
+                raise OntologyValidationError(
+                    "derived_from is only allowed for DERIVED_EVIDENCE"
+                )
+            if self.transformation is not None:
+                raise OntologyValidationError(
+                    "transformation is only allowed for DERIVED_EVIDENCE"
+                )
 
 
 @dataclass(frozen=True)
