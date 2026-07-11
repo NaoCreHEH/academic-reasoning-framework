@@ -266,8 +266,8 @@ exploited.
 
 ### Positive example: UML composition with incomplete lifecycle requirements
 
-**Confidence target:** Composition between `Order` and `Invoice` is a
-demonstrated modeling error.
+**Confidence target:** The composition between `Order` and `Invoice` conflicts
+with the intended lifecycle semantics.
 
 **Confidence basis:** The diagram uses composition, but the provided
 requirements do not state whether invoices share the order lifecycle.
@@ -276,7 +276,8 @@ requirements do not state whether invoices share the order lifecycle.
 
 **Boundary:** The provided diagram and requirements excerpt.
 
-**Limitation:** Missing lifecycle requirements keep alternatives viable.
+**Limitation:** Missing lifecycle requirements keep alternatives viable, so the
+composition choice may still be defensible under a matching domain assumption.
 
 ### Positive example: missing authorization artifacts
 
