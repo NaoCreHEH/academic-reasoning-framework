@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- RFC-0006 request interpretation model for producing structured routing signals
 - Structured routing engine for deterministic RFC-0005 ownership decisions
 - Capability registry foundation for RFC-0005 ownership and boundary data
 - Core ontology primitives for RFC-backed evidence, feedback, confidence, and routing structures
