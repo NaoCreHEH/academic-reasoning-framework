@@ -23,7 +23,7 @@ ROUTING_CASES: tuple[RoutingCase, ...] = (
             domain="Python",
         ),
         expected_primary="exam-generation",
-        expected_supporting=("python-teaching",),
+        expected_supporting=(),
         expects_ambiguity=False,
     ),
     RoutingCase(
@@ -56,7 +56,7 @@ ROUTING_CASES: tuple[RoutingCase, ...] = (
             domain="Python",
         ),
         expected_primary="architecture-review",
-        expected_supporting=("python-teaching",),
+        expected_supporting=(),
         expects_ambiguity=False,
     ),
     RoutingCase(
@@ -122,7 +122,7 @@ ROUTING_CASES: tuple[RoutingCase, ...] = (
             explicit_capability="architecture-review",
         ),
         expected_primary="exam-generation",
-        expected_supporting=("python-teaching",),
+        expected_supporting=(),
         expects_ambiguity=False,
     ),
     RoutingCase(

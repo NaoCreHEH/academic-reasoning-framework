@@ -30,6 +30,10 @@ The precedence is:
 Requested output ownership overrides artifact ownership. When this happens, the
 artifact owner can become a supporting capability.
 
+Domain support is a fallback primary signal only when no stronger output or
+artifact ownership signal exists. Domain support does not automatically imply
+collaboration, and it does not create a supporting capability by itself.
+
 ## Matching
 
 Matching is exact after conservative normalization: surrounding whitespace is
@@ -49,11 +53,13 @@ forced.
 
 ## Supporting Capabilities
 
-Supporting capabilities are conservative. The engine adds an artifact owner
-when a different output owner is primary, and may add a unique domain-support
-capability when it differs from the primary capability.
+Supporting capabilities are conservative. The engine currently adds an artifact
+owner when a different output owner is primary.
 
 A capability never appears as both primary and supporting.
+
+Future collaboration rules require explicit structured semantics. The engine
+does not infer cross-domain collaboration from a technology domain alone.
 
 ## Contextual Yield Rules
 

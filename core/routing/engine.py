@@ -167,7 +167,6 @@ class StructuredRoutingEngine:
                 supporting,
                 output_owners,
                 artifact_owners,
-                domain_supporters,
             )
 
         if primary is None and ambiguity is None:
@@ -276,14 +275,10 @@ class StructuredRoutingEngine:
         supporting: list[str],
         output_owners: tuple[CapabilityDefinition, ...],
         artifact_owners: tuple[CapabilityDefinition, ...],
-        domain_supporters: tuple[CapabilityDefinition, ...],
     ) -> None:
         output_primary = len(output_owners) == 1 and output_owners[0].identifier == primary
         if output_primary and len(artifact_owners) == 1:
             self._append_supporting(supporting, artifact_owners[0].identifier, primary)
-
-        if len(domain_supporters) == 1:
-            self._append_supporting(supporting, domain_supporters[0].identifier, primary)
 
     def _append_supporting(
         self,

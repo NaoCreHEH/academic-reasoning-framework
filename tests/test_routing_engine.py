@@ -202,7 +202,29 @@ class StructuredRoutingEngineTests(unittest.TestCase):
             )
         )
         self.assertEqual(decision.trace.primary_capability, "exam-generation")
-        self.assertEqual(decision.trace.supporting_capabilities, ("python-teaching",))
+        self.assertEqual(decision.trace.supporting_capabilities, ())
+
+    def test_domain_support_does_not_become_supporting_for_output_owned_routing(self) -> None:
+        decision = StructuredRoutingEngine(build_default_academic_registry()).route(
+            RoutingRequest(
+                user_objective="create questions",
+                requested_output="MCQ",
+                domain="Python",
+            )
+        )
+        self.assertEqual(decision.trace.primary_capability, "exam-generation")
+        self.assertNotIn("python-teaching", decision.trace.supporting_capabilities)
+
+    def test_domain_support_does_not_become_supporting_for_artifact_owned_routing(self) -> None:
+        decision = StructuredRoutingEngine(build_default_academic_registry()).route(
+            RoutingRequest(
+                user_objective="review architecture",
+                primary_artifact="repository",
+                domain="Python",
+            )
+        )
+        self.assertEqual(decision.trace.primary_capability, "architecture-review")
+        self.assertEqual(decision.trace.supporting_capabilities, ())
 
     def test_explicit_applicable_capability_honored(self) -> None:
         decision = StructuredRoutingEngine(build_default_academic_registry()).route(
@@ -294,7 +316,55 @@ class StructuredRoutingEngineTests(unittest.TestCase):
             )
         )
         self.assertEqual(decision.trace.primary_capability, "output")
-        self.assertEqual(decision.trace.supporting_capabilities, ("artifact", "domain"))
+        self.assertEqual(decision.trace.supporting_capabilities, ("artifact",))
+
+    def test_python_mcq_does_not_add_python_teaching_solely_from_domain(self) -> None:
+        decision = StructuredRoutingEngine(build_default_academic_registry()).route(
+            RoutingRequest(
+                user_objective="create questions",
+                requested_output="MCQ",
+                domain="Python",
+            )
+        )
+        self.assertEqual(decision.trace.primary_capability, "exam-generation")
+        self.assertEqual(decision.trace.supporting_capabilities, ())
+
+    def test_django_repository_architecture_does_not_add_python_teaching_from_domain(self) -> None:
+        decision = StructuredRoutingEngine(build_default_academic_registry()).route(
+            RoutingRequest(
+                user_objective="review repository architecture",
+                primary_artifact="repository",
+                domain="Python",
+            )
+        )
+        self.assertEqual(decision.trace.primary_capability, "architecture-review")
+        self.assertEqual(decision.trace.supporting_capabilities, ())
+
+    def test_python_submission_question_bank_support_comes_from_artifact_ownership(self) -> None:
+        decision = StructuredRoutingEngine(build_default_academic_registry()).route(
+            RoutingRequest(
+                user_objective="create question bank",
+                primary_artifact="Python submission",
+                requested_output="question bank",
+                domain="Python",
+            )
+        )
+        self.assertEqual(decision.trace.primary_capability, "exam-generation")
+        self.assertEqual(decision.trace.supporting_capabilities, ("python-teaching",))
+
+    def test_free_form_output_with_python_domain_routes_from_domain_signal(self) -> None:
+        decision = StructuredRoutingEngine(build_default_academic_registry()).route(
+            RoutingRequest(
+                user_objective="create questions",
+                requested_output="Create an MCQ about Python",
+                domain="Python",
+            )
+        )
+        self.assertEqual(decision.trace.primary_capability, "python-teaching")
+        self.assertIn(
+            "Structured domain is supported by python-teaching.",
+            decision.trace.decisive_signals,
+        )
 
     def test_primary_never_appears_in_supporting_capabilities(self) -> None:
         decision = StructuredRoutingEngine(build_default_academic_registry()).route(
