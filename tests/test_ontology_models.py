@@ -66,6 +66,64 @@ class EvidenceModelTests(unittest.TestCase):
         )
         self.assertEqual(item.identifier, "e1")
 
+    def test_direct_observation_with_derived_from_rejected(self) -> None:
+        with self.assertRaises(OntologyValidationError):
+            EvidenceItem(
+                identifier="e1",
+                category=EvidenceCategory.DIRECT_OBSERVATION,
+                reference=EvidenceReference(source="settings.py", locator="line 4"),
+                scope="settings.py",
+                provenance="static inspection",
+                derived_from=("e0",),
+            )
+
+    def test_execution_result_with_transformation_rejected(self) -> None:
+        with self.assertRaises(OntologyValidationError):
+            EvidenceItem(
+                identifier="e1",
+                category=EvidenceCategory.EXECUTION_RESULT,
+                reference=EvidenceReference(source="unit test output"),
+                scope="tests",
+                provenance="test execution",
+                transformation="summarized failing test output",
+            )
+
+    def test_measurement_with_derivation_lineage_rejected(self) -> None:
+        with self.assertRaises(OntologyValidationError):
+            EvidenceItem(
+                identifier="e1",
+                category=EvidenceCategory.MEASUREMENT,
+                reference=EvidenceReference(source="coverage report"),
+                scope="coverage",
+                provenance="measurement",
+                derived_from=("e0",),
+                transformation="calculated branch coverage",
+            )
+
+    def test_valid_non_derived_evidence_accepted(self) -> None:
+        item = EvidenceItem(
+            identifier="e1",
+            category=EvidenceCategory.MEASUREMENT,
+            reference=EvidenceReference(source="coverage report"),
+            scope="coverage",
+            provenance="measurement",
+        )
+        self.assertEqual(item.derived_from, ())
+        self.assertIsNone(item.transformation)
+
+    def test_valid_derived_evidence_accepted(self) -> None:
+        item = EvidenceItem(
+            identifier="d1",
+            category=EvidenceCategory.DERIVED_EVIDENCE,
+            reference=EvidenceReference(source="analysis summary"),
+            scope="module",
+            provenance="derived analysis",
+            derived_from=("e1",),
+            transformation="summarized repeated import cycles",
+        )
+        self.assertEqual(item.derived_from, ("e1",))
+        self.assertEqual(item.transformation, "summarized repeated import cycles")
+
     def test_blank_source_rejected(self) -> None:
         with self.assertRaises(OntologyValidationError):
             EvidenceReference(source=" ")
