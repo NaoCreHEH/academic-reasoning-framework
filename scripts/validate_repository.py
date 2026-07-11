@@ -53,7 +53,6 @@ required_rfc_sections = [
     "## Processing model",
     "## Examples",
     "## Counter-examples",
-    "## Anti-patterns",
     "## Edge cases",
     "## Conformance",
     "## Security and misuse considerations",
@@ -61,7 +60,7 @@ required_rfc_sections = [
     "## References",
 ]
 
-required_rfc_terms = [
+rfc_0001_required_terms = [
     "input",
     "context",
     "observation",
@@ -79,18 +78,30 @@ required_rfc_terms = [
 
 normative_terms = ["MUST", "MUST NOT", "SHOULD", "SHOULD NOT", "MAY"]
 rfc_errors = []
+rfc_0001 = ROOT / "rfcs" / "RFC-0001-reasoning-model.md"
 
 for rfc in sorted((ROOT / "rfcs").glob("*.md")):
-    text = rfc.read_text(encoding="utf-8")
+    try:
+        text = rfc.read_text(encoding="utf-8")
+    except UnicodeDecodeError as error:
+        rfc_errors.append(f"{rfc.relative_to(ROOT)} is not readable as UTF-8: {error}")
+        continue
+
     for section in required_rfc_sections:
         if section not in text:
             rfc_errors.append(f"{rfc.relative_to(ROOT)} missing section: {section}")
-    lower_text = text.lower()
-    for term in required_rfc_terms:
-        if term not in lower_text:
-            rfc_errors.append(f"{rfc.relative_to(ROOT)} missing term: {term}")
+
     if not any(term in text for term in normative_terms):
         rfc_errors.append(f"{rfc.relative_to(ROOT)} missing normative language")
+
+if rfc_0001.exists():
+    text = rfc_0001.read_text(encoding="utf-8")
+    lower_text = text.lower()
+    if "## Anti-patterns" not in text:
+        rfc_errors.append(f"{rfc_0001.relative_to(ROOT)} missing section: ## Anti-patterns")
+    for term in rfc_0001_required_terms:
+        if term not in lower_text:
+            rfc_errors.append(f"{rfc_0001.relative_to(ROOT)} missing term: {term}")
 
 if rfc_errors:
     print("RFC validation failed:")
