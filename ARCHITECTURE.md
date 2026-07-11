@@ -43,6 +43,11 @@ The interpretation layer produces structured signals from external
 interaction, conversation context, and artifacts. Structured routing selects
 capabilities from those signals, and capability execution remains separate.
 
+The `core/interpretation/` package represents RFC-0006 interpretation state and
+provenance. Conversion to `RoutingRequest` is strict: unresolved routing
+signals are not silently omitted. Free-form interpretation and artifact
+detectors remain unimplemented, and routing remains a separate layer.
+
 ### Implementations
 
 Adapters translate the specifications into concrete prompts, skills, agents, or software components.
