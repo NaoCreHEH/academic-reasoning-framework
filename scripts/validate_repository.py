@@ -18,11 +18,19 @@ REQUIRED = {
     ".github/workflows/markdown.yml",
     ".github/workflows/links.yml",
     ".github/workflows/structure.yml",
+    ".github/workflows/tests.yml",
+    "core/__init__.py",
+    "core/ontology/__init__.py",
+    "core/ontology/enums.py",
+    "core/ontology/models.py",
+    "core/ontology/validation.py",
     "rfcs/RFC-0001-reasoning-model.md",
     "rfcs/RFC-0002-evidence-model.md",
     "rfcs/RFC-0003-feedback-contract.md",
     "rfcs/RFC-0004-confidence-model.md",
     "rfcs/RFC-0005-routing-model.md",
+    "tests/test_ontology_models.py",
+    "tests/test_ontology_validation.py",
 }
 
 missing = sorted(path for path in REQUIRED if not (ROOT / path).exists())
