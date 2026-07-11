@@ -4,6 +4,7 @@ ARF separates normative reasoning rules from model-specific implementations.
 
 ```text
 Input
+  -> Request Interpretation
   -> Router
   -> Evidence Model
   -> Ontology
@@ -37,6 +38,10 @@ and boundaries. It provides registry data for RFC-0005 concepts.
 The structured routing engine consumes structured request signals and applies
 deterministic ownership rules. Free-form request interpretation remains outside
 the engine.
+
+The interpretation layer produces structured signals from external
+interaction, conversation context, and artifacts. Structured routing selects
+capabilities from those signals, and capability execution remains separate.
 
 ### Implementations
 

@@ -34,6 +34,7 @@ REQUIRED = {
     "rfcs/RFC-0003-feedback-contract.md",
     "rfcs/RFC-0004-confidence-model.md",
     "rfcs/RFC-0005-routing-model.md",
+    "rfcs/RFC-0006-request-interpretation-model.md",
     "tests/test_capability_registry.py",
     "tests/test_routing_engine.py",
     "tests/fixtures/__init__.py",
@@ -104,6 +105,7 @@ rfc_0002 = ROOT / "rfcs" / "RFC-0002-evidence-model.md"
 rfc_0003 = ROOT / "rfcs" / "RFC-0003-feedback-contract.md"
 rfc_0004 = ROOT / "rfcs" / "RFC-0004-confidence-model.md"
 rfc_0005 = ROOT / "rfcs" / "RFC-0005-routing-model.md"
+rfc_0006 = ROOT / "rfcs" / "RFC-0006-request-interpretation-model.md"
 
 rfc_0002_required_terms = [
     "evidence item",
@@ -212,6 +214,31 @@ rfc_0005_required_terms = [
     "Topic keywords MUST NOT be the sole routing basis",
 ]
 
+rfc_0006_required_terms = [
+    "request interpretation",
+    "interpretation input",
+    "user utterance",
+    "interaction context",
+    "attached artifact",
+    "observable artifact type",
+    "inferred artifact type",
+    "interpretation candidate",
+    "interpretation basis",
+    "interpretation ambiguity",
+    "interpretation conflict",
+    "interpretation limitation",
+    "resolved signal",
+    "unresolved signal",
+    "absent signal",
+    "signal provenance",
+    "signal revision",
+    "clarification need",
+    "conservative interpretation",
+    "structured routing request",
+]
+
+rfc_0006_required_states = ["Resolved", "Unresolved", "Absent"]
+
 for rfc in sorted((ROOT / "rfcs").glob("*.md")):
     try:
         text = rfc.read_text(encoding="utf-8")
@@ -268,6 +295,16 @@ if rfc_0005.exists():
     for term in rfc_0005_required_terms:
         if term.lower() not in lower_text:
             rfc_errors.append(f"{rfc_0005.relative_to(ROOT)} missing term: {term}")
+
+if rfc_0006.exists():
+    text = rfc_0006.read_text(encoding="utf-8")
+    lower_text = text.lower()
+    for term in rfc_0006_required_terms:
+        if term.lower() not in lower_text:
+            rfc_errors.append(f"{rfc_0006.relative_to(ROOT)} missing term: {term}")
+    for state in rfc_0006_required_states:
+        if state not in text:
+            rfc_errors.append(f"{rfc_0006.relative_to(ROOT)} missing state: {state}")
 
 if rfc_errors:
     print("RFC validation failed:")
