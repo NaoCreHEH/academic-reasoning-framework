@@ -154,6 +154,7 @@ def build_default_academic_registry() -> CapabilityRegistry:
                     "sequence diagram",
                     "UML model",
                 ),
+                supported_domains=("UML",),
                 yield_rules=(
                     CapabilityYieldRule(
                         target_capability="architecture-review",
@@ -255,6 +256,7 @@ def build_default_academic_registry() -> CapabilityRegistry:
                     "Python exercise",
                     "Python submission",
                 ),
+                supported_domains=("Python",),
                 yield_rules=(
                     CapabilityYieldRule(
                         target_capability="exam-generation",

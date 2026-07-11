@@ -32,8 +32,11 @@ validation; it does not implement reasoning, routing execution, or
 model-specific behavior.
 
 The `core/routing/` package represents machine-readable capability ownership
-and boundaries. It provides registry data for RFC-0005 concepts, while routing
-execution remains unimplemented.
+and boundaries. It provides registry data for RFC-0005 concepts.
+
+The structured routing engine consumes structured request signals and applies
+deterministic ownership rules. Free-form request interpretation remains outside
+the engine.
 
 ### Implementations
 
