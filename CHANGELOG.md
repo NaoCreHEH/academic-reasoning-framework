@@ -6,10 +6,12 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Structured routing no longer adds domain-only supporting capabilities
 - Capability registry yield relationships are contextual rules rather than bare capability edges
 
 ### Added
 
+- Structured routing engine for deterministic RFC-0005 ownership decisions
 - Capability registry foundation for RFC-0005 ownership and boundary data
 - Core ontology primitives for RFC-backed evidence, feedback, confidence, and routing structures
 - RFC-0005 routing model for capability selection and skill-collision handling
