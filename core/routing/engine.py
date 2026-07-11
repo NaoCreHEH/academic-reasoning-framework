@@ -6,6 +6,7 @@ embeddings, or call a model.
 """
 
 from dataclasses import dataclass
+from enum import Enum
 
 from core.ontology import RoutingTrace
 from core.routing.registry import (
@@ -17,6 +18,14 @@ from core.routing.registry import (
 
 class RoutingEngineError(ValueError):
     """Raised when structured routing objects violate local invariants."""
+
+
+class RoutingStatus(str, Enum):
+    """Qualitative routing outcome status."""
+
+    SELECTED = "selected"
+    AMBIGUOUS = "ambiguous"
+    NO_MATCH = "no_match"
 
 
 def _require_non_empty(value: str | None, field_name: str) -> None:

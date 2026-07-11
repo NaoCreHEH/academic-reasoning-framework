@@ -206,10 +206,12 @@ def to_routing_request(subtask: InterpretedSubtask) -> RoutingRequest:
 def _required_resolved_value(signal: InterpretedSignal) -> str:
     if signal.state is not InterpretationState.RESOLVED:
         raise InterpretationConversionError(
+            signal.kind,
             f"{signal.kind.value} must be resolved before routing conversion"
         )
     if signal.value is None:
         raise InterpretationConversionError(
+            signal.kind,
             f"{signal.kind.value} resolved signal has no value"
         )
     return signal.value
@@ -219,12 +221,14 @@ def _optional_routing_value(signal: InterpretedSignal) -> str | None:
     if signal.state is InterpretationState.RESOLVED:
         if signal.value is None:
             raise InterpretationConversionError(
+                signal.kind,
                 f"{signal.kind.value} resolved signal has no value"
             )
         return signal.value
     if signal.state is InterpretationState.ABSENT:
         return None
     raise InterpretationConversionError(
+        signal.kind,
         f"{signal.kind.value} is unresolved and cannot be silently omitted"
     )
 

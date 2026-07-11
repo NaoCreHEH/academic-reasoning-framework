@@ -3,6 +3,7 @@
 from core.routing.engine import (
     RoutingDecision,
     RoutingRequest,
+    RoutingStatus,
     StructuredRoutingEngine,
 )
 from core.routing.registry import (
@@ -22,6 +23,7 @@ __all__ = [
     "CapabilityYieldRule",
     "RoutingDecision",
     "RoutingRequest",
+    "RoutingStatus",
     "StructuredRoutingEngine",
     "UnknownCapabilityError",
     "build_default_academic_registry",

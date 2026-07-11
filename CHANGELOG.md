@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Routing regression benchmark foundation for interpretation-to-routing collision scenarios
 - Interpretation ontology primitives for RFC-0006 state, provenance, subtasks, and routing conversion
 - RFC-0006 request interpretation model for producing structured routing signals
 - Structured routing engine for deterministic RFC-0005 ownership decisions
