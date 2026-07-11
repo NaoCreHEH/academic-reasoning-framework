@@ -19,6 +19,7 @@ REQUIRED = {
     ".github/workflows/links.yml",
     ".github/workflows/structure.yml",
     "rfcs/RFC-0001-reasoning-model.md",
+    "rfcs/RFC-0002-evidence-model.md",
 }
 
 missing = sorted(path for path in REQUIRED if not (ROOT / path).exists())
@@ -79,6 +80,34 @@ rfc_0001_required_terms = [
 normative_terms = ["MUST", "MUST NOT", "SHOULD", "SHOULD NOT", "MAY"]
 rfc_errors = []
 rfc_0001 = ROOT / "rfcs" / "RFC-0001-reasoning-model.md"
+rfc_0002 = ROOT / "rfcs" / "RFC-0002-evidence-model.md"
+
+rfc_0002_required_terms = [
+    "evidence item",
+    "evidence reference",
+    "claim",
+    "source",
+    "primary source",
+    "secondary source",
+    "external source",
+    "static evidence",
+    "dynamic evidence",
+    "measurement",
+    "reproduction",
+    "corroboration",
+    "contradiction",
+    "evidence scope",
+    "evidence freshness",
+    "evidence provenance",
+    "evidence limitation",
+    "unsupported claim",
+    "fabricated evidence",
+    "E1 - Direct observation",
+    "E2 - Execution or reproduction result",
+    "E3 - Measurement",
+    "E4 - Derived evidence",
+    "Corroboration is not an E-category",
+]
 
 for rfc in sorted((ROOT / "rfcs").glob("*.md")):
     try:
@@ -102,6 +131,13 @@ if rfc_0001.exists():
     for term in rfc_0001_required_terms:
         if term not in lower_text:
             rfc_errors.append(f"{rfc_0001.relative_to(ROOT)} missing term: {term}")
+
+if rfc_0002.exists():
+    text = rfc_0002.read_text(encoding="utf-8")
+    lower_text = text.lower()
+    for term in rfc_0002_required_terms:
+        if term.lower() not in lower_text:
+            rfc_errors.append(f"{rfc_0002.relative_to(ROOT)} missing term: {term}")
 
 if rfc_errors:
     print("RFC validation failed:")
