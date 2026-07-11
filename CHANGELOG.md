@@ -4,8 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- Capability registry yield relationships are contextual rules rather than bare capability edges
+
 ### Added
 
+- Capability registry foundation for RFC-0005 ownership and boundary data
 - Core ontology primitives for RFC-backed evidence, feedback, confidence, and routing structures
 - RFC-0005 routing model for capability selection and skill-collision handling
 - RFC-0004 confidence model for qualitative support labels and uncertainty

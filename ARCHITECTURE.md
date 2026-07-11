@@ -31,6 +31,10 @@ primitives for stable RFC concepts. It is limited to data representation and
 validation; it does not implement reasoning, routing execution, or
 model-specific behavior.
 
+The `core/routing/` package represents machine-readable capability ownership
+and boundaries. It provides registry data for RFC-0005 concepts, while routing
+execution remains unimplemented.
+
 ### Implementations
 
 Adapters translate the specifications into concrete prompts, skills, agents, or software components.
