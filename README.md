@@ -28,6 +28,12 @@ ARF is in early specification work. The initial milestones focus on governance, 
 
 See [ROADMAP.md](ROADMAP.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [CONTRIBUTING.md](CONTRIBUTING.md).
 
+## Running benchmarks
+
+```text
+python scripts/run_benchmarks.py
+```
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

@@ -6,6 +6,8 @@ from benchmark.conformance import (
     ConformanceDomain,
     ConformanceExpectation,
     ConformanceFailureKind,
+    ConformanceResult,
+    ConformanceSummary,
     run_conformance_benchmark,
 )
 
@@ -159,8 +161,37 @@ class ConformanceBenchmarkRunnerTests(unittest.TestCase):
         self.assertEqual(sum(total for _, total in totals.values()), summary.total)
         for domain in ConformanceDomain:
             passed, total = totals[domain]
-            self.assertEqual(passed, len(summary.by_domain(domain)))
+            domain_results = summary.by_domain(domain)
+            self.assertEqual(passed, sum(1 for result in domain_results if result.passed))
+            self.assertEqual(total, len(domain_results))
             self.assertGreater(total, 0)
+
+    def test_domain_summaries_count_failed_results_independently(self) -> None:
+        summary = ConformanceSummary(
+            results=(
+                ConformanceResult(
+                    case_identifier="pass",
+                    domain=ConformanceDomain.EVIDENCE,
+                    passed=True,
+                    expected=ConformanceExpectation.ACCEPT,
+                    observed_accepted=True,
+                    failure_kind=None,
+                    observed_error_type=None,
+                    diagnostic="passed",
+                ),
+                ConformanceResult(
+                    case_identifier="fail",
+                    domain=ConformanceDomain.EVIDENCE,
+                    passed=False,
+                    expected=ConformanceExpectation.ACCEPT,
+                    observed_accepted=False,
+                    failure_kind=ConformanceFailureKind.UNEXPECTED_REJECTION,
+                    observed_error_type="CustomError",
+                    diagnostic="failed",
+                ),
+            )
+        )
+        self.assertEqual(summary.domain_totals()[ConformanceDomain.EVIDENCE], (1, 2))
 
     def test_diagnostic_exists_for_every_result(self) -> None:
         summary = run_conformance_benchmark(CONFORMANCE_CASES)

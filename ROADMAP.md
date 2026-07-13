@@ -24,7 +24,7 @@
 
 - Routing benchmark foundation implemented
 - Conformance benchmark foundation implemented
-- Regression harness remains partial until broader benchmark orchestration exists
+- Unified regression orchestration implemented
 
 ## v0.5 — Reference implementation
 
