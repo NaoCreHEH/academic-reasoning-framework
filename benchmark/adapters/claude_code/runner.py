@@ -42,13 +42,19 @@ class ClaudeCliInvoker:
                 unavailable_reason="Claude CLI not found",
             )
 
-        help_result = subprocess.run(
-            [claude, "--help"],
-            capture_output=True,
-            text=True,
-            timeout=self.timeout_seconds,
-            check=False,
-        )
+        try:
+            help_result = subprocess.run(
+                [claude, "--help"],
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_seconds,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return ClaudeInvocationObservation(
+                available=False,
+                unavailable_reason="Claude CLI help inspection timed out",
+            )
         help_text = f"{help_result.stdout}\n{help_result.stderr}"
         if "--plugin-dir" not in help_text:
             return ClaudeInvocationObservation(
@@ -67,13 +73,22 @@ class ClaudeCliInvoker:
             )
 
         print_flag = "--print" if "--print" in help_text else "-p"
-        result = subprocess.run(
-            [claude, print_flag, "--plugin-dir", str(plugin_dir), prompt],
-            capture_output=True,
-            text=True,
-            timeout=self.timeout_seconds,
-            check=False,
-        )
+        try:
+            result = subprocess.run(
+                [claude, print_flag, "--plugin-dir", str(plugin_dir), prompt],
+                capture_output=True,
+                text=True,
+                timeout=self.timeout_seconds,
+                check=False,
+            )
+        except subprocess.TimeoutExpired:
+            return ClaudeInvocationObservation(
+                available=True,
+                response_text=None,
+                observed_skill=None,
+                invocation_error="Claude live invocation timed out",
+                dispatch_observation_reason="skill identity not observable",
+            )
         return ClaudeInvocationObservation(
             available=True,
             response_text=result.stdout,
@@ -104,16 +119,7 @@ def _run_case(
     invoker: ClaudeInvoker,
     plugin_dir: Path,
 ) -> ClaudeAdapterCaseResult:
-    try:
-        observation = invoker.invoke(case.prompt, plugin_dir)
-    except Exception as error:  # pragma: no cover - defensive integration boundary
-        return ClaudeAdapterCaseResult(
-            case_identifier=case.identifier,
-            dispatch_status=ClaudeEvaluationStatus.SKIPPED,
-            response_contract_status=ClaudeEvaluationStatus.SKIPPED,
-            observed_skill=None,
-            diagnostic=f"invocation unavailable: {error}",
-        )
+    observation = invoker.invoke(case.prompt, plugin_dir)
 
     if not observation.available:
         return ClaudeAdapterCaseResult(
@@ -122,6 +128,15 @@ def _run_case(
             response_contract_status=ClaudeEvaluationStatus.SKIPPED,
             observed_skill=None,
             diagnostic=f"evaluation unavailable: {observation.unavailable_reason}",
+        )
+
+    if observation.invocation_error is not None:
+        return ClaudeAdapterCaseResult(
+            case_identifier=case.identifier,
+            dispatch_status=ClaudeEvaluationStatus.FAILED,
+            response_contract_status=ClaudeEvaluationStatus.FAILED,
+            observed_skill=observation.observed_skill,
+            diagnostic=f"Claude invocation failed: {observation.invocation_error}",
         )
 
     if (

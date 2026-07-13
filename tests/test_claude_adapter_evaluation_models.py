@@ -10,6 +10,7 @@ from benchmark.adapters.claude_code.models import (
     ClaudeAdapterCaseResult,
     ClaudeAdapterEvaluationSummary,
     ClaudeAdapterEvaluationValidationError,
+    ClaudeInvocationObservation,
     ClaudeInvocationResult,
     ResponseMarker,
 )
@@ -89,6 +90,31 @@ class ClaudeAdapterEvaluationModelTests(unittest.TestCase):
     def test_invocation_result_validates_types(self):
         with self.assertRaises(ClaudeAdapterEvaluationValidationError):
             ClaudeInvocationResult("0", "", "")  # type: ignore[arg-type]
+
+    def test_available_observation_may_carry_invocation_error(self):
+        observation = ClaudeInvocationObservation(
+            available=True,
+            invocation_error="Claude live invocation timed out",
+        )
+        self.assertEqual(
+            observation.invocation_error,
+            "Claude live invocation timed out",
+        )
+
+    def test_unavailable_observation_rejects_invocation_error(self):
+        with self.assertRaises(ClaudeAdapterEvaluationValidationError):
+            ClaudeInvocationObservation(
+                available=False,
+                unavailable_reason="Claude CLI not found",
+                invocation_error="timeout",
+            )
+
+    def test_blank_invocation_error_rejected(self):
+        with self.assertRaises(ClaudeAdapterEvaluationValidationError):
+            ClaudeInvocationObservation(
+                available=True,
+                invocation_error=" ",
+            )
 
     def test_result_success_semantics(self):
         result = ClaudeAdapterCaseResult(

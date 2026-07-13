@@ -124,6 +124,7 @@ class ClaudeInvocationObservation:
     process_result: ClaudeInvocationResult | None = None
     unavailable_reason: str | None = None
     dispatch_observation_reason: str | None = None
+    invocation_error: str | None = None
 
     def __post_init__(self) -> None:
         if not isinstance(self.available, bool):
@@ -141,11 +142,17 @@ class ClaudeInvocationObservation:
                 )
         else:
             _require_non_empty(self.unavailable_reason, "unavailable_reason")
+            if self.invocation_error is not None:
+                raise ClaudeAdapterEvaluationValidationError(
+                    "unavailable observations must not include invocation_error"
+                )
         if self.dispatch_observation_reason is not None:
             _require_non_empty(
                 self.dispatch_observation_reason,
                 "dispatch_observation_reason",
             )
+        if self.invocation_error is not None:
+            _require_non_empty(self.invocation_error, "invocation_error")
 
 
 @dataclass(frozen=True)

@@ -1,4 +1,6 @@
 from pathlib import Path
+import subprocess
+from unittest import mock
 import unittest
 
 from benchmark.adapters.claude_code.enums import (
@@ -12,6 +14,7 @@ from benchmark.adapters.claude_code.models import (
     ResponseMarker,
 )
 from benchmark.adapters.claude_code.runner import run_claude_adapter_evaluation
+from benchmark.adapters.claude_code.runner import ClaudeCliInvoker
 
 
 PLUGIN_DIR = Path("implementations/claude-code/arf-academic")
@@ -23,6 +26,14 @@ class FakeInvoker:
 
     def invoke(self, prompt, plugin_dir):
         return self.observation
+
+
+class RaisingInvoker:
+    def __init__(self, error):
+        self.error = error
+
+    def invoke(self, prompt, plugin_dir):
+        raise self.error
 
 
 class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
@@ -65,6 +76,31 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
             result.response_contract_status,
             ClaudeEvaluationStatus.SKIPPED,
         )
+        self.assertIn("Claude CLI not found", result.diagnostic)
+
+    def test_type_error_from_invoker_propagates(self):
+        with self.assertRaises(TypeError):
+            run_claude_adapter_evaluation(
+                cases=(_case(),),
+                invoker=RaisingInvoker(TypeError("bug")),
+                plugin_dir=PLUGIN_DIR,
+            )
+
+    def test_value_error_from_invoker_propagates(self):
+        with self.assertRaises(ValueError):
+            run_claude_adapter_evaluation(
+                cases=(_case(),),
+                invoker=RaisingInvoker(ValueError("bug")),
+                plugin_dir=PLUGIN_DIR,
+            )
+
+    def test_unexpected_exceptions_are_not_converted_to_skipped(self):
+        with self.assertRaises(RuntimeError):
+            run_claude_adapter_evaluation(
+                cases=(_case(),),
+                invoker=RaisingInvoker(RuntimeError("unexpected")),
+                plugin_dir=PLUGIN_DIR,
+            )
 
     def test_failed_process_does_not_become_skipped(self):
         result = _run(
@@ -79,6 +115,21 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
             result.response_contract_status,
             ClaudeEvaluationStatus.FAILED,
         )
+
+    def test_invocation_error_fails_both_dimensions(self):
+        result = _run(
+            _case(),
+            ClaudeInvocationObservation(
+                available=True,
+                invocation_error="Claude live invocation timed out",
+            ),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.FAILED)
+        self.assertIs(
+            result.response_contract_status,
+            ClaudeEvaluationStatus.FAILED,
+        )
+        self.assertIn("timed out", result.diagnostic)
 
     def test_any_marker_passes_on_one_pattern(self):
         case = _case(
@@ -173,6 +224,59 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
         self.assertIs(
             result.response_contract_status,
             ClaudeEvaluationStatus.SKIPPED,
+        )
+
+    def test_cli_help_timeout_produces_unavailable_observation(self):
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                side_effect=subprocess.TimeoutExpired(["claude", "--help"], 1),
+            ):
+                observation = ClaudeCliInvoker(timeout_seconds=1).invoke(
+                    "Prompt",
+                    PLUGIN_DIR,
+                )
+        self.assertFalse(observation.available)
+        self.assertEqual(
+            observation.unavailable_reason,
+            "Claude CLI help inspection timed out",
+        )
+
+    def test_actual_invocation_timeout_becomes_failed_observation(self):
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout="--plugin-dir --print",
+            stderr="",
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                side_effect=[
+                    help_result,
+                    subprocess.TimeoutExpired(["claude", "--print"], 1),
+                ],
+            ):
+                observation = ClaudeCliInvoker(timeout_seconds=1).invoke(
+                    "Prompt",
+                    PLUGIN_DIR,
+                )
+        result = _run(_case(), observation)
+        self.assertTrue(observation.available)
+        self.assertEqual(
+            observation.invocation_error,
+            "Claude live invocation timed out",
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.FAILED)
+        self.assertIs(
+            result.response_contract_status,
+            ClaudeEvaluationStatus.FAILED,
         )
 
 

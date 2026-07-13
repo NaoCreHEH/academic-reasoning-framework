@@ -51,6 +51,21 @@ dispatch and response-contract counts separately.
 All-skipped evaluation is not a pass. On a machine without Claude Code, the
 live CLI reports skipped cases honestly and exits with code `3`.
 
+`SKIPPED` is an observed limitation state, not an exception sink. It represents
+an explicit environment or observability limitation such as a missing Claude
+CLI, an unsupported `--plugin-dir` option, unsupported non-interactive print
+mode, or unobservable native skill identity.
+
+Unexpected harness or invoker exceptions are not converted to skipped results.
+Programmer errors such as `TypeError`, `ValueError`, `AttributeError`, or
+`RuntimeError` propagate normally.
+
+Capability inspection and attempted evaluation are treated differently. A
+timeout while inspecting `claude --help` means evaluation capability could not
+be established and may be reported unavailable. A timeout during the actual
+live invocation means evaluation was attempted and failed; it is reported as
+`FAILED`, not `SKIPPED`.
+
 ## CLI Usage
 
 ```text
