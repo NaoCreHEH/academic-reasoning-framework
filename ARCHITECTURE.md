@@ -65,6 +65,10 @@ separate suites without merging their semantics into one score.
 
 Adapters translate the specifications into concrete prompts, skills, agents, or software components.
 
+The Claude Code reference plugin is an adapter from the model-independent ARF
+core to five native Claude Code skills. It operationalizes ARF contracts in
+skill instructions; it does not replace or become the normative core.
+
 ### Benchmark
 
 Conformance and regression cases verify that changes improve behavior rather than merely changing wording.

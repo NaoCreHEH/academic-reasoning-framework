@@ -16,3 +16,4 @@ jobs:
       - run: python -m unittest discover -s tests -v
       - run: python scripts/validate_repository.py
       - run: python scripts/run_benchmarks.py --suite all --format text
+      - run: python scripts/validate_claude_plugin.py

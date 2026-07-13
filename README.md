@@ -34,6 +34,11 @@ See [ROADMAP.md](ROADMAP.md), [ARCHITECTURE.md](ARCHITECTURE.md), and [CONTRIBUT
 python scripts/run_benchmarks.py
 ```
 
+## Reference implementations
+
+The first reference adapter is the Claude Code plugin at
+`implementations/claude-code/arf-academic`.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

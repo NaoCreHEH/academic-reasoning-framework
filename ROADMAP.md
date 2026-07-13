@@ -28,8 +28,9 @@
 
 ## v0.5 — Reference implementation
 
-- Claude Code plugin
-- UML, Python, PFE, architecture, and assessment adapters
+- Claude Code plugin foundation implemented
+- UML, Python, PFE, architecture, and assessment adapter foundation implemented
+- Live Claude Code adapter evaluation against routing and feedback scenarios
 
 ## v1.0 — Public release
 
