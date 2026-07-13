@@ -1,0 +1,8 @@
+{
+  "name": "arf-academic",
+  "version": "0.1.0",
+  "description": "ARF-based academic and software review skills for Claude Code.",
+  "author": {
+    "name": "Academic Reasoning Framework"
+  }
+}
