@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Unified benchmark orchestration API and CLI for routing and conformance suites
 - Structural conformance benchmark foundation for implemented ARF object invariants
 - Routing regression benchmark foundation for interpretation-to-routing collision scenarios
 - Interpretation ontology primitives for RFC-0006 state, provenance, subtasks, and routing conversion

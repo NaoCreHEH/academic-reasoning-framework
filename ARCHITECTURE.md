@@ -57,6 +57,10 @@ evidence, claims, confidence, feedback, and interpretation objects. It executes
 explicit operations and compares validation outcomes; benchmark results do not
 replace semantic reasoning review.
 
+Routing regression and structural conformance feed a benchmark orchestration
+layer that reports text, JSON, and CI exit status. Orchestration runs the
+separate suites without merging their semantics into one score.
+
 ### Implementations
 
 Adapters translate the specifications into concrete prompts, skills, agents, or software components.
