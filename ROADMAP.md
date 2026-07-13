@@ -22,9 +22,9 @@
 
 ## v0.4 — Benchmark
 
-- Routing benchmark foundation
-- Conformance benchmark
-- Regression harness
+- Routing benchmark foundation implemented
+- Conformance benchmark foundation implemented
+- Regression harness remains partial until broader benchmark orchestration exists
 
 ## v0.5 — Reference implementation
 
