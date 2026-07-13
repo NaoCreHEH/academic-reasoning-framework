@@ -69,6 +69,18 @@ The Claude Code reference plugin is an adapter from the model-independent ARF
 core to five native Claude Code skills. It operationalizes ARF contracts in
 skill instructions; it does not replace or become the normative core.
 
+The live Claude adapter evaluation boundary sits outside deterministic core
+validation:
+
+```text
+ARF deterministic core and benchmarks
+  -> Claude Code plugin adapter
+  -> live adapter evaluation boundary
+```
+
+Model behavior evaluation is environment-dependent and does not replace
+deterministic repository validation.
+
 ### Benchmark
 
 Conformance and regression cases verify that changes improve behavior rather than merely changing wording.

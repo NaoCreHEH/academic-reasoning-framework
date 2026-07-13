@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Claude Code adapter evaluation harness for live dispatch and response-contract checks
 - Claude Code reference plugin with five ARF academic skills
 - Unified benchmark orchestration API and CLI for routing and conformance suites
 - Structural conformance benchmark foundation for implemented ARF object invariants
