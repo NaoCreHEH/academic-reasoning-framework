@@ -39,6 +39,16 @@ python scripts/run_benchmarks.py
 The first reference adapter is the Claude Code plugin at
 `implementations/claude-code/arf-academic`.
 
+Live adapter evaluation can be run with:
+
+```text
+python scripts/run_claude_adapter_evaluation.py
+```
+
+Claude Code must be locally available for live evaluation. If it is unavailable,
+the evaluator reports skipped cases rather than treating them as behavioral
+passes.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
