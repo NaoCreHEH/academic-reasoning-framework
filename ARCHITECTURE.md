@@ -52,6 +52,11 @@ The routing regression benchmark exercises the boundary from `InterpretedSubtask
 to `RoutingRequest` to `StructuredRoutingEngine` to expectation comparison. It
 uses explicit interpretation objects rather than parsing benchmark descriptions.
 
+The structural conformance benchmark evaluates implemented RFC invariants for
+evidence, claims, confidence, feedback, and interpretation objects. It executes
+explicit operations and compares validation outcomes; benchmark results do not
+replace semantic reasoning review.
+
 ### Implementations
 
 Adapters translate the specifications into concrete prompts, skills, agents, or software components.
