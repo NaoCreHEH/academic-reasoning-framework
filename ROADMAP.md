@@ -37,6 +37,8 @@
   corrections
 - Determine whether ARF shared contracts require a pre-dispatch or global
   adapter mechanism beyond native skills
+- Evaluate post-dispatch adherence of shared versus skill-local ARF contracts
+  across the full live case set
 - Real adapter evaluation remains environment-dependent until run against an
   observable Claude Code invocation
 

@@ -12,6 +12,10 @@ All notable changes to this project will be documented in this file.
 - Claude live-evaluation hardening now rejects confidence-before-percentage
   false passes, strengthens UML evidence-gate workflow ordering from reproduced
   live behavior, and documents the pre-dispatch adapter governance limitation
+- Claude live-evaluation response contracts now correct the UML missing-evidence
+  marker false negative, add a PFE operational confidence gate, detect narrow
+  internal adapter narration, and distinguish pre-dispatch governance from
+  post-dispatch instruction adherence
 - Claude Code adapter evaluation now observes public stream-json events,
   plugin load state, invocation duration, and diacritic-insensitive markers
 - Structured routing decisions expose structural status and ambiguity candidates

@@ -65,6 +65,44 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         self.assertEqual(status.value, "failed")
         self.assertEqual(failed_markers, ("structure-not-proof",))
 
+    def test_uml_observed_missing_rules_phrase_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-uml-missing-lifecycle-evidence",
+            (
+                "Sans cahier des charges ni regles metier, on ne peut pas "
+                "qualifier ce choix d'erreur. La question metier qui tranche "
+                "est le cycle de vie."
+            ),
+        )
+
+    def test_uml_observed_supposition_phrase_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-uml-missing-lifecycle-evidence",
+            (
+                "Imposer une composition serait une supposition, pas une "
+                "deduction. Il faut savoir si Chanson peut exister sans "
+                "Repertoire."
+            ),
+        )
+
+    def test_uml_demonstrated_error_refusal_phrase_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-uml-missing-lifecycle-evidence",
+            (
+                "Association simple Repertoire-Chanson : pas une erreur "
+                "demontree. Il faut savoir si Chanson disparait avec Repertoire."
+            ),
+        )
+
+    def test_uml_unrelated_preference_does_not_satisfy_missing_evidence_marker(self):
+        status, failed_markers, matches = _evaluate_response(
+            _adapter_case("response-uml-missing-lifecycle-evidence"),
+            "La composition est meilleure dans ce diagramme UML.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ("insufficient-domain-evidence", "domain-rule-resolution"))
+        self.assertEqual(matches, ())
+
     def test_confidence_aucune_partie_wording_passes(self):
         self.assertCaseMarkerPasses(
             "response-confidence-no-percentage",
@@ -81,6 +119,15 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         self.assertCaseMarkerPasses(
             "response-confidence-no-percentage",
             "Sans le rapport, impossible d'evaluer l'ensemble du PFE.",
+        )
+
+    def test_confidence_observed_scope_wording_satisfies_marker(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            (
+                "Aucune section, page ou extrait du rapport n'a ete partage. "
+                "Il n'y a aucune base pour evaluer la qualite globale."
+            ),
         )
 
     def test_confidence_unjustified_global_confidence_fails(self):
@@ -127,10 +174,49 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
                     matches,
                 )
 
+    def test_confidence_live_tilde_percentage_fragment_fails_without_marker_failure(self):
+        status, failed_markers, matches = _evaluate_response(
+            _adapter_case("response-confidence-no-percentage"),
+            "Sans document fourni, niveau de confiance = ~0 %, non evaluable.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ())
+        self.assertTrue(any(r"\bconfiance\b" in match for match in matches))
+
+    def test_confidence_zero_percentage_after_confidence_fails(self):
+        status, failed_markers, matches = _evaluate_response(
+            _adapter_case("response-confidence-no-percentage"),
+            "Sans rapport, ma confiance est de 0%.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ())
+        self.assertTrue(any(r"\bconfiance\b" in match for match in matches))
+
     def test_confidence_refusal_without_percentage_passes(self):
         self.assertCaseMarkerPasses(
             "response-confidence-no-percentage",
             "Je ne peux pas evaluer ma confiance sans le rapport.",
+        )
+
+    def test_confidence_unknown_non_evaluable_response_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            (
+                "Aucun rapport n'a ete fourni. Pour la qualite globale du PFE, "
+                "la confiance est Unknown / non evaluable."
+            ),
+        )
+
+    def test_confidence_global_unknown_without_percentage_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            "Sans rapport, la conclusion globale est Unknown.",
+        )
+
+    def test_partial_scope_limitation_marker_behavior(self):
+        self.assertMarkerPasses(
+            "uniquement sur cette section",
+            "Je n'ai lu que la methodologie. Mon jugement porte uniquement sur cette section.",
         )
 
     def test_unrelated_percentage_does_not_fail_confidence_case(self):
@@ -138,6 +224,30 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
             "response-confidence-no-percentage",
             "Le taux de completion est 80%. Je ne peux pas evaluer ma confiance sans le rapport.",
         )
+
+    def test_internal_adapter_narration_fails_in_response_cases(self):
+        failing_responses = (
+            "La regle de prudence de ce skill est explicite.",
+            "Le skill que je viens d'utiliser dit que...",
+            "The skill instructions require caution.",
+        )
+        for response in failing_responses:
+            with self.subTest(response=response):
+                status, _failed_markers, matches = _evaluate_response(
+                    _adapter_case("response-confidence-no-percentage"),
+                    f"Sans rapport, non evaluable. {response}",
+                )
+                self.assertEqual(status.value, "failed")
+                self.assertTrue(matches)
+
+    def test_professional_skills_wording_does_not_trigger_internal_narration(self):
+        passing_responses = (
+            "Sans rapport, non evaluable. L'etudiant doit developper ses skills techniques.",
+            "Sans rapport, non evaluable. Cette competence est importante.",
+        )
+        for response in passing_responses:
+            with self.subTest(response=response):
+                self.assertCaseMarkerPasses("response-confidence-no-percentage", response)
 
     def assertMarkerPasses(self, pattern, response):
         status, failed_markers, matches = _evaluate_response(_case(pattern), response)

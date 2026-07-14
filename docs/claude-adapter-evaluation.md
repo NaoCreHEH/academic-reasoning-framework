@@ -48,7 +48,7 @@ When Claude Code returns a response but does not expose selected skill identity,
 dispatch is reported as `SKIPPED` with an observability reason. Response-contract
 evaluation may still run against the response.
 
-## Pre-Dispatch Governance Limitation
+## Pre-dispatch Governance Gap
 
 The shared ARF reasoning contract is bundled as a skill reference. If Claude
 answers before invoking an ARF skill, shared skill instructions may not govern
@@ -66,6 +66,17 @@ Possible future mechanisms include plugin hooks, agent/system-level
 instructions where supported, or another model-specific global adapter layer.
 This document records the unresolved v0.5 adapter question; it does not choose
 or implement a mechanism.
+
+## Post-dispatch Instruction Adherence
+
+Observed Skill invocation proves only that adapter instructions were available
+through the observable invocation boundary. It does not prove that the response
+obeyed every applicable instruction, and it does not require access to hidden
+model state.
+
+Loaded instructions and obeyed instructions are different observable claims. A
+post-dispatch contract violation is an adapter behavioral result, not evidence
+that the skill was never loaded.
 
 ## Response Markers
 
