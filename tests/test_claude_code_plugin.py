@@ -188,6 +188,24 @@ class ClaudeCodePluginSkillTests(unittest.TestCase):
         )
         self.assertIn("debatable choice or hypothesis", text)
 
+    def test_uml_workflow_requires_evidence_gate_before_error_classification(self) -> None:
+        text = compact(skill_text("uml-analysis"))
+        self.assertIn(
+            "lifecycle, ownership, exclusivity, sharing, and survival semantics",
+            text,
+        )
+        self.assertIn("If those semantics are not established", text)
+        self.assertIn("state the exact domain question that would resolve it", text)
+        self.assertIn(
+            "demonstrated semantic error only when the observed artifact or explicit context contradicts an established domain rule",
+            text,
+        )
+        self.assertIn(
+            "Typical-domain examples may illustrate alternatives after classification",
+            text,
+        )
+        self.assertIn("must not supply the missing evidence", text)
+
 
 if __name__ == "__main__":
     unittest.main()

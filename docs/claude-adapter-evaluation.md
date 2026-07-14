@@ -48,6 +48,25 @@ When Claude Code returns a response but does not expose selected skill identity,
 dispatch is reported as `SKIPPED` with an observability reason. Response-contract
 evaluation may still run against the response.
 
+## Pre-Dispatch Governance Limitation
+
+The shared ARF reasoning contract is bundled as a skill reference. If Claude
+answers before invoking an ARF skill, shared skill instructions may not govern
+the pre-dispatch response. Skill-local contracts cannot guarantee behavior
+before the skill is invoked.
+
+One observed confidence case mentioned future use of
+`arf-academic:pfe-review` in prose even though no public Skill tool invocation
+was observed. This is classified as a pre-dispatch adapter governance
+limitation, not a `pfe-review` skill defect.
+
+Architectural consequence: if ARF needs global presentation, confidence, or
+evidence rules before dispatch, a skill-only adapter may be insufficient.
+Possible future mechanisms include plugin hooks, agent/system-level
+instructions where supported, or another model-specific global adapter layer.
+This document records the unresolved v0.5 adapter question; it does not choose
+or implement a mechanism.
+
 ## Response Markers
 
 Response-contract evaluation uses shallow mechanical markers:

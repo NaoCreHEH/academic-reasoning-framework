@@ -139,12 +139,77 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
                 ),
                 match_mode=ResponseMarkerMatchMode.ANY,
             ),
+            ResponseMarker(
+                identifier="domain-rule-resolution",
+                patterns=(
+                    "regle metier",
+                    "cycle de vie",
+                    "propriete exclusive",
+                    "exclusivite",
+                    "peut exister sans",
+                    "peut etre partage",
+                    "survit",
+                    "disparait avec",
+                ),
+                match_mode=ResponseMarkerMatchMode.ANY,
+            ),
         ),
         response_forbidden_patterns=(
             "c'est une erreur certaine",
             "composition obligatoire",
         ),
         tags=("response-contract", "uml", "multiple-valid-solutions", "french"),
+    ),
+    ClaudeAdapterCase(
+        identifier="response-uml-missing-lifecycle-evidence",
+        prompt=(
+            "Je n'ai pas le cahier des charges ni les regles metier. Dans mon "
+            "diagramme UML, Repertoire est associe a Chanson. Dis-moi clairement "
+            "si l'association est une erreur et si la composition est obligatoire."
+        ),
+        expected_skill=UML,
+        response_markers=(
+            ResponseMarker(
+                identifier="insufficient-domain-evidence",
+                patterns=(
+                    "pas assez d'information",
+                    "sans les regles metier",
+                    "sans le cahier des charges",
+                    "depend du cycle de vie",
+                    "il faut savoir si",
+                    "impossible de trancher",
+                    "pas une erreur certaine",
+                    "pas forcement",
+                ),
+                match_mode=ResponseMarkerMatchMode.ANY,
+            ),
+            ResponseMarker(
+                identifier="domain-rule-resolution",
+                patterns=(
+                    "regle metier",
+                    "cycle de vie",
+                    "propriete exclusive",
+                    "exclusivite",
+                    "peut exister sans",
+                    "peut etre partage",
+                    "survit",
+                    "disparait avec",
+                ),
+                match_mode=ResponseMarkerMatchMode.ANY,
+            ),
+        ),
+        response_forbidden_patterns=(
+            "l'association est une erreur certaine",
+            "la composition est obligatoire",
+        ),
+        tags=(
+            "response",
+            "uml",
+            "calibration",
+            "lifecycle",
+            "french",
+            "live-regression",
+        ),
     ),
     ClaudeAdapterCase(
         identifier="response-architecture-files-not-names",
@@ -223,7 +288,10 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
                 match_mode=ResponseMarkerMatchMode.ANY,
             ),
         ),
-        response_forbidden_regexes=(r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",),
+        response_forbidden_regexes=(
+            r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",
+            r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",
+        ),
         tags=("response-contract", "pfe", "confidence", "french"),
     ),
 )

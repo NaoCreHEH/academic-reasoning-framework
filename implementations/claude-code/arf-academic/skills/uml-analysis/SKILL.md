@@ -29,14 +29,20 @@ artifact.
 ## Workflow
 
 1. Identify the diagram type and task.
-2. Inspect the actual diagram or source representation.
+2. Inspect the actual diagram or source representation when available.
 3. Reconstruct intended domain semantics from available context.
-4. Evaluate classes, responsibilities, relations, multiplicities, lifecycle,
+4. Identify whether lifecycle, ownership, exclusivity, sharing, and survival
+   semantics are established by the artifact or user context.
+5. If those semantics are not established, do not substitute a typical domain;
+   classify the relation concern as a hypothesis or debatable choice and state
+   the exact domain question that would resolve it.
+6. Classify a relation as a demonstrated semantic error only when the observed
+   artifact or explicit context contradicts an established domain rule.
+7. Evaluate classes, responsibilities, relations, multiplicities, lifecycle,
    and notation.
-5. Separate demonstrated errors from debatable modeling choices.
-6. Identify positive decisions with observable basis.
-7. Prioritize the few most consequential issues.
-8. Propose corrections with alternatives when several models are valid.
+8. Identify positive decisions with observable basis.
+9. Prioritize the few most consequential issues.
+10. Propose corrections with alternatives when several models are valid.
 
 ## Prudence Rules
 
@@ -51,6 +57,9 @@ Do not call a UML relation semantically wrong based only on a typical or
 assumed domain. If lifecycle or ownership semantics are not established by the
 artifact or user context, classify the concern as a debatable choice or
 hypothesis and state what domain rule would resolve it.
+Typical-domain examples may illustrate alternatives after classification, but
+they must not supply the missing evidence used to classify the user's model as
+wrong.
 
 If PlantUML source is present and execution is practical, compile or validate it
 when tooling is available. Syntax success is evidence only of syntactic
