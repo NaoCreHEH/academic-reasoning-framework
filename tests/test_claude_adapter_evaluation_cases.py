@@ -52,6 +52,18 @@ class ClaudeAdapterEvaluationCasesTests(unittest.TestCase):
             case.response_forbidden_regexes,
         )
 
+    def test_architecture_case_is_conceptual_and_ignores_current_repo(self):
+        prompt = _case("response-architecture-files-not-names").prompt.lower()
+        self.assertIn("question conceptuelle", prompt)
+        self.assertIn("imaginons un depot", prompt)
+        self.assertIn("ne tiens pas compte du depot courant", prompt)
+
+    def test_confidence_case_matches_fresh_invocation_context(self):
+        prompt = _case("response-confidence-no-percentage").prompt.lower()
+        self.assertIn("aucun rapport de pfe", prompt)
+        self.assertNotIn("tu n'as vu qu'une partie", prompt)
+        self.assertNotIn("partie du rapport", prompt)
+
     def test_python_b1_case_contains_oop_forbidden_patterns(self):
         case = _case("response-python-no-oop")
         self.assertIn("cree une classe", case.response_forbidden_patterns)

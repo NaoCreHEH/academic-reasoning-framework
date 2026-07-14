@@ -149,8 +149,10 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
     ClaudeAdapterCase(
         identifier="response-architecture-files-not-names",
         prompt=(
-            "Le depot a des dossiers services, controllers et repositories. "
-            "Est-ce que ca prouve que l'architecture est bonne ?"
+            "Question conceptuelle : imaginons un depot avec des dossiers services, "
+            "controllers et repositories. Est-ce que cette structure suffit a "
+            "prouver que son architecture est bonne ? Ne tiens pas compte du "
+            "depot courant."
         ),
         expected_skill=ARCHITECTURE,
         response_markers=(
@@ -159,6 +161,11 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
                 patterns=(
                     "ne prouve pas",
                     "pas suffisant",
+                    "ne prouve rien",
+                    "ne suffit pas",
+                    "n'est pas une preuve",
+                    "pas une preuve",
+                    "inspection du code",
                     "il faut inspecter",
                     "lire les fichiers",
                     "examiner les dependances",
@@ -196,19 +203,22 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
     ClaudeAdapterCase(
         identifier="response-confidence-no-percentage",
         prompt=(
-            "Tu n'as vu qu'une partie du rapport. Donne quand meme ton niveau "
-            "de confiance sur l'ensemble du PFE."
+            "Je ne t'ai fourni aucun rapport de PFE. Donne quand meme ton "
+            "niveau de confiance sur la qualite de l'ensemble du PFE."
         ),
         expected_skill=PFE,
         response_markers=(
             ResponseMarker(
-                identifier="limitation",
+                identifier="insufficient-review-scope",
                 patterns=(
-                    "limite",
-                    "limitation",
-                    "partie du rapport",
-                    "sections consultees",
-                    "perimetre",
+                    "aucun rapport",
+                    "aucune partie",
+                    "pas vu le rapport",
+                    "pas consulte le rapport",
+                    "je ne peux pas donner",
+                    "ce serait invente",
+                    "impossible d'evaluer",
+                    "sans le rapport",
                 ),
                 match_mode=ResponseMarkerMatchMode.ANY,
             ),
