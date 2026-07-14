@@ -121,20 +121,40 @@ class ClaudeInvocationObservation:
     available: bool
     response_text: str | None = None
     observed_skill: str | None = None
+    observed_skills: tuple[str, ...] = ()
     process_result: ClaudeInvocationResult | None = None
     unavailable_reason: str | None = None
     dispatch_observation_reason: str | None = None
     invocation_error: str | None = None
+    plugin_loaded: bool | None = None
+    plugin_load_error: str | None = None
+    duration_seconds: float | None = None
+    raw_response_available: bool = False
 
     def __post_init__(self) -> None:
         if not isinstance(self.available, bool):
             raise ClaudeAdapterEvaluationValidationError("available must be a bool")
+        if not isinstance(self.raw_response_available, bool):
+            raise ClaudeAdapterEvaluationValidationError(
+                "raw_response_available must be a bool"
+            )
+        if self.plugin_loaded is not None and not isinstance(self.plugin_loaded, bool):
+            raise ClaudeAdapterEvaluationValidationError(
+                "plugin_loaded must be a bool or None"
+            )
         if self.response_text is not None and not isinstance(self.response_text, str):
             raise ClaudeAdapterEvaluationValidationError(
                 "response_text must be a string when set"
             )
         if self.observed_skill is not None:
             _require_non_empty(self.observed_skill, "observed_skill")
+        for observed in self.observed_skills:
+            _require_non_empty(observed, "observed_skills")
+        if self.observed_skill is not None and self.observed_skills:
+            if self.observed_skills != (self.observed_skill,):
+                raise ClaudeAdapterEvaluationValidationError(
+                    "observed_skill must match observed_skills when both are set"
+                )
         if self.available:
             if self.unavailable_reason is not None:
                 raise ClaudeAdapterEvaluationValidationError(
@@ -153,6 +173,21 @@ class ClaudeInvocationObservation:
             )
         if self.invocation_error is not None:
             _require_non_empty(self.invocation_error, "invocation_error")
+        if self.plugin_load_error is not None:
+            _require_non_empty(self.plugin_load_error, "plugin_load_error")
+            if self.plugin_loaded is not False:
+                raise ClaudeAdapterEvaluationValidationError(
+                    "plugin_load_error requires plugin_loaded=False"
+                )
+        if self.duration_seconds is not None:
+            if not isinstance(self.duration_seconds, int | float):
+                raise ClaudeAdapterEvaluationValidationError(
+                    "duration_seconds must be numeric"
+                )
+            if self.duration_seconds < 0:
+                raise ClaudeAdapterEvaluationValidationError(
+                    "duration_seconds cannot be negative"
+                )
 
 
 @dataclass(frozen=True)

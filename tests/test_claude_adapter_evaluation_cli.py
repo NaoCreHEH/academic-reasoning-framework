@@ -17,7 +17,10 @@ class FakeInvoker:
         unavailable_reason="not configured",
     )
 
-    def __init__(self):
+    timeout_seconds = None
+
+    def __init__(self, timeout_seconds=180):
+        FakeInvoker.timeout_seconds = timeout_seconds
         pass
 
     def invoke(self, prompt, plugin_dir):
@@ -25,6 +28,36 @@ class FakeInvoker:
 
 
 class ClaudeAdapterEvaluationCliTests(unittest.TestCase):
+    def test_default_timeout_is_180(self):
+        _output, _code = _run_cli(
+            ["--case", "dispatch-python-mcq"],
+            ClaudeInvocationObservation(
+                available=False,
+                unavailable_reason="Claude CLI not found",
+            ),
+        )
+        self.assertEqual(FakeInvoker.timeout_seconds, 180)
+
+    def test_positive_custom_timeout_accepted(self):
+        _output, _code = _run_cli(
+            ["--case", "dispatch-python-mcq", "--timeout", "12"],
+            ClaudeInvocationObservation(
+                available=False,
+                unavailable_reason="Claude CLI not found",
+            ),
+        )
+        self.assertEqual(FakeInvoker.timeout_seconds, 12)
+
+    def test_zero_timeout_rejected(self):
+        with self.assertRaises(SystemExit) as context:
+            cli.main(["--timeout", "0"])
+        self.assertEqual(context.exception.code, 2)
+
+    def test_negative_timeout_rejected(self):
+        with self.assertRaises(SystemExit) as context:
+            cli.main(["--timeout", "-1"])
+        self.assertEqual(context.exception.code, 2)
+
     def test_json_parses(self):
         output, code = _run_cli(
             ["--format", "json", "--case", "dispatch-python-mcq"],
@@ -127,6 +160,38 @@ class ClaudeAdapterEvaluationCliTests(unittest.TestCase):
         )
         self.assertIn("dispatch: SKIPPED", output)
         self.assertIn("Claude CLI not found", output)
+
+    def test_show_responses_prints_public_response_text(self):
+        output, _code = _run_cli(
+            ["--case", "response-architecture-files-not-names", "--show-responses"],
+            ClaudeInvocationObservation(
+                available=True,
+                response_text="Public final response",
+                observed_skill="arf-academic:architecture-review",
+                process_result=ClaudeInvocationResult(0, "", ""),
+                raw_response_available=True,
+            ),
+        )
+        self.assertIn("  response:", output)
+        self.assertIn("    Public final response", output)
+
+    def test_responses_hidden_by_default(self):
+        output, _code = _run_cli(
+            ["--case", "response-architecture-files-not-names"],
+            ClaudeInvocationObservation(
+                available=True,
+                response_text="Public final response",
+                observed_skill="arf-academic:architecture-review",
+                process_result=ClaudeInvocationResult(0, "", ""),
+                raw_response_available=True,
+            ),
+        )
+        self.assertNotIn("Public final response", output)
+
+    def test_show_responses_with_json_rejected(self):
+        with self.assertRaises(SystemExit) as context:
+            cli.main(["--format", "json", "--show-responses"])
+        self.assertEqual(context.exception.code, 2)
 
 
 def _run_cli(argv, observation):

@@ -43,11 +43,14 @@ Live adapter evaluation can be run with:
 
 ```text
 python scripts/run_claude_adapter_evaluation.py
+python scripts/run_claude_adapter_evaluation.py --show-responses
 ```
 
 Claude Code must be locally available for live evaluation. If it is unavailable,
 the evaluator reports skipped cases rather than treating them as behavioral
-passes.
+passes. Use `--show-responses` only for local diagnostics where public response
+evidence is needed; do not use it for automated logs containing sensitive
+student data.
 
 ## License
 

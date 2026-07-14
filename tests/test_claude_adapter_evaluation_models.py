@@ -116,6 +116,62 @@ class ClaudeAdapterEvaluationModelTests(unittest.TestCase):
                 invocation_error=" ",
             )
 
+    def test_valid_plugin_loaded_true(self):
+        observation = ClaudeInvocationObservation(
+            available=True,
+            plugin_loaded=True,
+        )
+        self.assertTrue(observation.plugin_loaded)
+
+    def test_valid_plugin_loaded_false_with_load_error(self):
+        observation = ClaudeInvocationObservation(
+            available=True,
+            plugin_loaded=False,
+            plugin_load_error="failed to load",
+        )
+        self.assertFalse(observation.plugin_loaded)
+        self.assertEqual(observation.plugin_load_error, "failed to load")
+
+    def test_plugin_load_error_requires_plugin_loaded_false(self):
+        with self.assertRaises(ClaudeAdapterEvaluationValidationError):
+            ClaudeInvocationObservation(
+                available=True,
+                plugin_loaded=True,
+                plugin_load_error="failed to load",
+            )
+
+    def test_non_negative_duration_accepted(self):
+        observation = ClaudeInvocationObservation(
+            available=True,
+            duration_seconds=0.5,
+        )
+        self.assertEqual(observation.duration_seconds, 0.5)
+
+    def test_negative_duration_rejected(self):
+        with self.assertRaises(ClaudeAdapterEvaluationValidationError):
+            ClaudeInvocationObservation(
+                available=True,
+                duration_seconds=-0.1,
+            )
+
+    def test_observed_skill_collection_preserves_repeated_invocations(self):
+        observation = ClaudeInvocationObservation(
+            available=True,
+            observed_skills=("arf-academic:exam-generation", "arf-academic:exam-generation"),
+        )
+        self.assertEqual(
+            observation.observed_skills,
+            ("arf-academic:exam-generation", "arf-academic:exam-generation"),
+        )
+
+    def test_observed_skill_and_collection_must_match_when_both_set(self):
+        with self.assertRaises(ClaudeAdapterEvaluationValidationError):
+            ClaudeInvocationObservation(
+                available=True,
+                observed_skill="arf-academic:exam-generation",
+                observed_skills=("arf-academic:python-teaching",),
+            )
+
     def test_result_success_semantics(self):
         result = ClaudeAdapterCaseResult(
             case_identifier="case",

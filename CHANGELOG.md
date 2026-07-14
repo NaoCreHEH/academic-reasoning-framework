@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Claude Code adapter evaluation now observes public stream-json events,
+  plugin load state, invocation duration, and diacritic-insensitive markers
 - Structured routing decisions expose structural status and ambiguity candidates
 - Structured routing no longer adds domain-only supporting capabilities
 - Capability registry yield relationships are contextual rules rather than bare capability edges
