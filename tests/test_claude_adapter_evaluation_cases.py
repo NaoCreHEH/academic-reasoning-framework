@@ -51,6 +51,43 @@ class ClaudeAdapterEvaluationCasesTests(unittest.TestCase):
             r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",
             case.response_forbidden_regexes,
         )
+        self.assertIn(
+            r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",
+            case.response_forbidden_regexes,
+        )
+
+    def test_uml_choice_case_requires_domain_rule_resolution_marker(self):
+        case = _case("response-uml-choice-not-error")
+        markers = {marker.identifier: marker for marker in case.response_markers}
+        self.assertIn("domain-rule-resolution", markers)
+        self.assertIn("cycle de vie", markers["domain-rule-resolution"].patterns)
+        self.assertIn("peut etre partage", markers["domain-rule-resolution"].patterns)
+
+    def test_uml_missing_lifecycle_evidence_case_exists(self):
+        case = _case("response-uml-missing-lifecycle-evidence")
+        self.assertEqual(case.expected_skill, "arf-academic:uml-analysis")
+        self.assertIn("calibration", case.tags)
+        self.assertIn("lifecycle", case.tags)
+        self.assertIn("live-regression", case.tags)
+        self.assertIn(
+            "l'association est une erreur certaine",
+            case.response_forbidden_patterns,
+        )
+        self.assertIn(
+            "la composition est obligatoire",
+            case.response_forbidden_patterns,
+        )
+
+    def test_uml_missing_lifecycle_evidence_case_markers_exist(self):
+        case = _case("response-uml-missing-lifecycle-evidence")
+        markers = {marker.identifier: marker for marker in case.response_markers}
+        self.assertIn("insufficient-domain-evidence", markers)
+        self.assertIn("domain-rule-resolution", markers)
+        self.assertIn(
+            "sans les regles metier",
+            markers["insufficient-domain-evidence"].patterns,
+        )
+        self.assertIn("cycle de vie", markers["domain-rule-resolution"].patterns)
 
     def test_architecture_case_is_conceptual_and_ignores_current_repo(self):
         prompt = _case("response-architecture-files-not-names").prompt.lower()

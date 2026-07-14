@@ -99,6 +99,46 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         self.assertEqual(status.value, "failed")
         self.assertEqual(matches, (r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",))
 
+    def test_confidence_before_percentage_regex_catches_live_fragment(self):
+        status, _failed_markers, matches = _evaluate_response(
+            _adapter_case("response-confidence-no-percentage"),
+            "Sans le rapport, mon niveau de confiance est donc nul (0%).",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(
+            matches,
+            (r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",),
+        )
+
+    def test_confidence_before_percentage_regex_catches_common_forms(self):
+        case = _adapter_case("response-confidence-no-percentage")
+        failing_responses = (
+            "Sans le rapport, le niveau de confiance est de 0%.",
+            "Sans le rapport, le niveau de confiance ... 0%.",
+            "Sans le rapport, confiance : 80%.",
+            "Sans le rapport, confiance de 50%.",
+        )
+        for response in failing_responses:
+            with self.subTest(response=response):
+                status, _failed_markers, matches = _evaluate_response(case, response)
+                self.assertEqual(status.value, "failed")
+                self.assertIn(
+                    r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",
+                    matches,
+                )
+
+    def test_confidence_refusal_without_percentage_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            "Je ne peux pas evaluer ma confiance sans le rapport.",
+        )
+
+    def test_unrelated_percentage_does_not_fail_confidence_case(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            "Le taux de completion est 80%. Je ne peux pas evaluer ma confiance sans le rapport.",
+        )
+
     def assertMarkerPasses(self, pattern, response):
         status, failed_markers, matches = _evaluate_response(_case(pattern), response)
         self.assertEqual(status.value, "passed")

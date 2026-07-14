@@ -35,6 +35,8 @@
   refined from actual run evidence
 - Observed live cases are being converted into targeted adapter and benchmark
   corrections
+- Determine whether ARF shared contracts require a pre-dispatch or global
+  adapter mechanism beyond native skills
 - Real adapter evaluation remains environment-dependent until run against an
   observable Claude Code invocation
 

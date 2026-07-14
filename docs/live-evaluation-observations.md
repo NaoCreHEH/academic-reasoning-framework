@@ -59,6 +59,40 @@ Additional observation:
   report was supplied and checks for conservative refusal or insufficient review
   scope.
 
+## Live Rerun After Contract Narrowing
+
+Three live reruns after the previous adapter hardening produced additional
+evidence:
+
+- `response-uml-choice-not-error`: dispatch to `arf-academic:uml-analysis`
+  passed and the mechanical response contract passed. The public response again
+  overclassified from a typical musical/playlist assumption by calling the
+  association semantically false, then later said certainty was not possible.
+  This reproduces the UML calibration issue after the prior narrow correction.
+  The UML workflow now requires an evidence gate before classifying a relation
+  as a demonstrated semantic error.
+- `response-architecture-files-not-names`: dispatch was skipped because no
+  Skill tool invocation was externally observable, while the response contract
+  passed. The public response did not narrate internal skill instructions. No
+  architecture skill correction is indicated by this rerun.
+- `response-confidence-no-percentage`: dispatch was skipped because no Skill
+  tool invocation was externally observable. The old mechanical contract passed,
+  but the public response said the confidence level was `0%` and then said that
+  assigning a number would be fabrication. Finding classification: benchmark
+  false PASSED and response confidence-contract violation. Consequence: the
+  regex now rejects confidence-before-percentage wording such as `confiance ...
+  0%`. A false PASSED is more dangerous than a false FAILED because the harness
+  may certify a violated contract.
+
+The confidence rerun also said it would use `arf-academic:pfe-review` in prose,
+but no public Skill tool invocation was observed. This is a pre-dispatch adapter
+governance limitation, not a `pfe-review` skill defect. Skill-local contracts
+cannot guarantee behavior before the skill is invoked. If ARF needs global
+presentation, confidence, or evidence rules before dispatch, a skill-only
+adapter may be insufficient. Future investigation may consider plugin hooks,
+agent/system-level instructions where supported, or another model-specific
+global adapter layer; this remains an unresolved v0.5 adapter question.
+
 ## Instrumentation Open Issue
 
 PowerShell diagnostic output displayed UTF-8 mojibake such as
