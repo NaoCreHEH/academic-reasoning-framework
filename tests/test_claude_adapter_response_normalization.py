@@ -1,6 +1,7 @@
 import unittest
 
 from benchmark.adapters.claude_code.enums import ResponseMarkerMatchMode
+from benchmark.adapters.claude_code.cases import CLAUDE_ADAPTER_CASES
 from benchmark.adapters.claude_code.models import ClaudeAdapterCase, ResponseMarker
 from benchmark.adapters.claude_code.runner import _evaluate_response
 
@@ -38,8 +39,77 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         _status, failed_markers, _matches = _evaluate_response(case, "forcemant")
         self.assertEqual(failed_markers, ("marker",))
 
+    def test_architecture_live_ne_prouve_rien_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-architecture-files-not-names",
+            "la presence de ces dossiers ne prouve rien sur la qualite de l'architecture",
+        )
+
+    def test_architecture_live_ne_suffit_pas_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-architecture-files-not-names",
+            "le nommage seul ne suffit pas",
+        )
+
+    def test_architecture_pas_une_preuve_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-architecture-files-not-names",
+            "la structure de dossiers est une hypothese sur l'architecture, pas une preuve",
+        )
+
+    def test_architecture_unrelated_folder_presence_fails(self):
+        status, failed_markers, _matches = _evaluate_response(
+            _adapter_case("response-architecture-files-not-names"),
+            "Les dossiers services et controllers sont presents.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ("structure-not-proof",))
+
+    def test_confidence_aucune_partie_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            "Je n'ai en fait vu aucune partie d'un rapport de PFE",
+        )
+
+    def test_confidence_invente_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            "Je ne peux donc pas donner de niveau de confiance, meme partiel : ce serait invente.",
+        )
+
+    def test_confidence_sans_le_rapport_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            "Sans le rapport, impossible d'evaluer l'ensemble du PFE.",
+        )
+
+    def test_confidence_unjustified_global_confidence_fails(self):
+        status, failed_markers, _matches = _evaluate_response(
+            _adapter_case("response-confidence-no-percentage"),
+            "Je suis confiant sur la qualite globale du PFE.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ("insufficient-review-scope",))
+
+    def test_confidence_percentage_regex_remains_active(self):
+        status, _failed_markers, matches = _evaluate_response(
+            _adapter_case("response-confidence-no-percentage"),
+            "Sans le rapport, je donne quand meme 80% de confiance.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(matches, (r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",))
+
     def assertMarkerPasses(self, pattern, response):
         status, failed_markers, matches = _evaluate_response(_case(pattern), response)
+        self.assertEqual(status.value, "passed")
+        self.assertEqual(failed_markers, ())
+        self.assertEqual(matches, ())
+
+    def assertCaseMarkerPasses(self, identifier, response):
+        status, failed_markers, matches = _evaluate_response(
+            _adapter_case(identifier),
+            response,
+        )
         self.assertEqual(status.value, "passed")
         self.assertEqual(failed_markers, ())
         self.assertEqual(matches, ())
@@ -54,6 +124,10 @@ def _case(pattern):
             ResponseMarker("marker", (pattern,), ResponseMarkerMatchMode.ANY),
         ),
     )
+
+
+def _adapter_case(identifier):
+    return next(case for case in CLAUDE_ADAPTER_CASES if case.identifier == identifier)
 
 
 if __name__ == "__main__":

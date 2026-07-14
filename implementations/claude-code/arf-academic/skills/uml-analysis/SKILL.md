@@ -47,6 +47,11 @@ compiles. Do not infer composition without lifecycle ownership. Do not confuse
 association with dependency solely from method parameters. Ask whether the model
 reflects domain semantics, not only UML syntax.
 
+Do not call a UML relation semantically wrong based only on a typical or
+assumed domain. If lifecycle or ownership semantics are not established by the
+artifact or user context, classify the concern as a debatable choice or
+hypothesis and state what domain rule would resolve it.
+
 If PlantUML source is present and execution is practical, compile or validate it
 when tooling is available. Syntax success is evidence only of syntactic
 validity.

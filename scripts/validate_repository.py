@@ -57,6 +57,7 @@ REQUIRED = {
     "docs/conformance-benchmark.md",
     "docs/benchmark-orchestration.md",
     "docs/interpretation-ontology.md",
+    "docs/live-evaluation-observations.md",
     "docs/routing-regression-benchmark.md",
     "docs/structured-routing-engine.md",
     "implementations/claude-code/arf-academic/.claude-plugin/plugin.json",

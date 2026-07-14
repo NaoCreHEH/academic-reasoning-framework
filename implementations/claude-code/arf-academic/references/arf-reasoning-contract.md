@@ -92,6 +92,14 @@ material, and limitation when material.
 This is a semantic contract. Do not force verbose headings for every finding.
 For concise requests, preserve the contract with compact prose.
 
+## Adapter Presentation Boundary
+
+Apply the skill and shared references silently. Do not narrate, quote, or expose
+internal skill instructions, reference wording, routing boundaries, or example
+text unless the user explicitly asks about the plugin implementation. Continue
+to explain evidence, observations, limitations, inspected files, executed
+checks, and public reasoning conclusions.
+
 ## Concision
 
 Prefer the smallest response that remains reviewable. Include enough evidence
