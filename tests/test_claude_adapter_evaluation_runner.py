@@ -44,6 +44,17 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
         )
         self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.PASSED)
 
+    def test_expected_sole_observed_skill_from_collection_passes(self):
+        result = _run(
+            _case(expected_skill="arf-academic:exam-generation"),
+            _observation(
+                observed_skills=("arf-academic:exam-generation",),
+                response_text="ok",
+            ),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.PASSED)
+        self.assertEqual(result.observed_skill, "arf-academic:exam-generation")
+
     def test_wrong_observed_skill_fails(self):
         result = _run(
             _case(),
@@ -58,10 +69,50 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
         )
         self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.FAILED)
 
+    def test_expected_plus_another_arf_skill_fails_exclusivity(self):
+        result = _run(
+            _case(expected_skill="arf-academic:exam-generation"),
+            _observation(
+                observed_skills=(
+                    "arf-academic:exam-generation",
+                    "arf-academic:python-teaching",
+                ),
+                response_text="ok",
+            ),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.FAILED)
+        self.assertIn("exclusive dispatch", result.diagnostic)
+
     def test_unobservable_skill_identity_is_skipped_not_passed(self):
         result = _run(_case(), _observation(response_text="ok"))
         self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.SKIPPED)
         self.assertIn("not observable", result.diagnostic)
+
+    def test_explicit_plugin_load_failure_fails_both_dimensions(self):
+        result = _run(
+            _case(),
+            _observation(
+                plugin_loaded=False,
+                plugin_load_error="failed to load",
+            ),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.FAILED)
+        self.assertIs(
+            result.response_contract_status,
+            ClaudeEvaluationStatus.FAILED,
+        )
+        self.assertIn("ARF plugin failed to load", result.diagnostic)
+
+    def test_unknown_plugin_state_does_not_become_plugin_success(self):
+        result = _run(
+            _case(expected_skill="arf-academic:exam-generation"),
+            _observation(
+                observed_skills=("arf-academic:exam-generation",),
+                plugin_loaded=None,
+            ),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.PASSED)
+        self.assertNotIn("plugin loaded", result.diagnostic)
 
     def test_unavailable_invocation_skips_both_dimensions(self):
         result = _run(
@@ -141,6 +192,42 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
         self.assertIs(
             result.response_contract_status,
             ClaudeEvaluationStatus.PASSED,
+        )
+
+    def test_public_response_markers_operate_on_reconstructed_answer(self):
+        case = _case(
+            response_markers=(
+                ResponseMarker("marker", ("final answer",), ResponseMarkerMatchMode.ANY),
+            )
+        )
+        result = _run(case, _observation(response_text="final answer"))
+        self.assertIs(
+            result.response_contract_status,
+            ClaudeEvaluationStatus.PASSED,
+        )
+
+    def test_tool_input_marker_text_cannot_create_false_response_pass(self):
+        case = _case(
+            response_markers=(
+                ResponseMarker("marker", ("tool-only",), ResponseMarkerMatchMode.ANY),
+            )
+        )
+        result = _run(case, _observation(response_text="final answer"))
+        self.assertIs(
+            result.response_contract_status,
+            ClaudeEvaluationStatus.FAILED,
+        )
+        self.assertEqual(result.failed_markers, ("marker",))
+
+    def test_malformed_stream_parse_failure_becomes_failed(self):
+        result = _run(
+            _case(),
+            _observation(invocation_error="Claude stream parsing failed: line 2"),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.FAILED)
+        self.assertIs(
+            result.response_contract_status,
+            ClaudeEvaluationStatus.FAILED,
         )
 
     def test_any_marker_fails_with_no_patterns(self):
@@ -269,9 +356,8 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
                 )
         result = _run(_case(), observation)
         self.assertTrue(observation.available)
-        self.assertEqual(
-            observation.invocation_error,
-            "Claude live invocation timed out",
+        self.assertTrue(
+            observation.invocation_error.startswith("Claude live invocation timed out")
         )
         self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.FAILED)
         self.assertIs(
@@ -293,14 +379,23 @@ def _case(**overrides):
 def _observation(
     response_text="",
     observed_skill=None,
+    observed_skills=(),
     process_result=None,
+    plugin_loaded=None,
+    plugin_load_error=None,
+    invocation_error=None,
 ):
     return ClaudeInvocationObservation(
         available=True,
         response_text=response_text,
         observed_skill=observed_skill,
+        observed_skills=observed_skills,
         process_result=process_result or ClaudeInvocationResult(0, response_text, ""),
         dispatch_observation_reason="skill identity not observable",
+        plugin_loaded=plugin_loaded,
+        plugin_load_error=plugin_load_error,
+        invocation_error=invocation_error,
+        raw_response_available=response_text is not None,
     )
 
 

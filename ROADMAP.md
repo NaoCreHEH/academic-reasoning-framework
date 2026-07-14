@@ -31,6 +31,8 @@
 - Claude Code plugin foundation implemented
 - UML, Python, PFE, architecture, and assessment adapter foundation implemented
 - Live Claude Code adapter evaluation harness implemented
+- Live adapter evaluation has begun, with observability instrumentation being
+  refined from actual run evidence
 - Real adapter evaluation remains environment-dependent until run against an
   observable Claude Code invocation
 

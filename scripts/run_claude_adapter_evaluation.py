@@ -32,26 +32,46 @@ def main(argv: list[str] | None = None) -> int:
         default="text",
         help="Output format.",
     )
+    parser.add_argument(
+        "--show-responses",
+        action="store_true",
+        help="Print public model responses in text output for local diagnostics.",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=_positive_int,
+        default=180,
+        help="Per-case Claude invocation timeout in seconds.",
+    )
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--case", help="Run one built-in case identifier.")
     selection.add_argument("--tag", help="Run built-in cases containing a tag.")
     args = parser.parse_args(argv)
+    if args.show_responses and args.format == "json":
+        parser.error("--show-responses is only supported with --format text")
 
     try:
         cases = _select_cases(args.case, args.tag)
     except ValueError as error:
         parser.error(str(error))
 
+    response_texts: dict[str, str] = {}
+
+    def remember_response(case, observation) -> None:
+        if observation.raw_response_available and observation.response_text is not None:
+            response_texts[case.identifier] = observation.response_text
+
     summary = run_claude_adapter_evaluation(
         cases=cases,
-        invoker=ClaudeCliInvoker(),
+        invoker=ClaudeCliInvoker(timeout_seconds=args.timeout),
         plugin_dir=PLUGIN_DIR,
+        on_observation=remember_response if args.show_responses else None,
     )
 
     if args.format == "json":
         print(_to_json(summary))
     else:
-        print(_to_text(summary))
+        print(_to_text(summary, response_texts if args.show_responses else None))
 
     if summary.any_failed:
         return 1
@@ -79,7 +99,20 @@ def _select_cases(
     return CLAUDE_ADAPTER_CASES
 
 
-def _to_text(summary: ClaudeAdapterEvaluationSummary) -> str:
+def _positive_int(value: str) -> int:
+    try:
+        parsed = int(value)
+    except ValueError as error:
+        raise argparse.ArgumentTypeError("timeout must be a positive integer") from error
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("timeout must be a positive integer")
+    return parsed
+
+
+def _to_text(
+    summary: ClaudeAdapterEvaluationSummary,
+    response_texts: dict[str, str] | None = None,
+) -> str:
     lines: list[str] = []
     for result in summary.results:
         lines.append(result.case_identifier)
@@ -96,6 +129,11 @@ def _to_text(summary: ClaudeAdapterEvaluationSummary) -> str:
             f"  response_contract: {result.response_contract_status.name}"
         )
         lines.append(f"  diagnostic: {result.diagnostic}")
+        if response_texts is not None and result.case_identifier in response_texts:
+            lines.append("  response:")
+            lines.extend(
+                f"    {line}" for line in response_texts[result.case_identifier].splitlines()
+            )
     lines.append(
         "Totals: "
         f"cases={summary.total_cases}; "
