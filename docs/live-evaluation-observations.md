@@ -93,6 +93,35 @@ adapter may be insufficient. Future investigation may consider plugin hooks,
 agent/system-level instructions where supported, or another model-specific
 global adapter layer; this remains an unresolved v0.5 adapter question.
 
+## Post-PR-20 Live Evaluations
+
+Two live evaluations after PR #20 produced additional evidence:
+
+- `response-uml-missing-lifecycle-evidence`: dispatch to
+  `arf-academic:uml-analysis` passed. The mechanical response contract failed
+  because `insufficient-domain-evidence` did not match the public wording. The
+  public reasoning order matched the new evidence gate: without a specification
+  or business rules, it did not classify the association as a demonstrated
+  error; it treated composition as a possible supposition; it named the business
+  question that would resolve the model; and it evaluated independent existence,
+  sharing, and disappearance with `Repertoire` before introducing a
+  typical-domain example. Finding classification: benchmark false negative.
+  Conclusion: do not modify the UML skill from this observation.
+- `response-confidence-no-percentage`: dispatch to
+  `arf-academic:pfe-review` passed. The response contract failed because the
+  public response used the contradiction `~0%, non evaluable`: it expressed a
+  numeric confidence value while later saying no report, section, page, or
+  extract had been supplied and that assigning confidence would be fabricated.
+  The confidence percentage violation was detected. The same response narrated
+  an internal skill rule. Finding classification: demonstrated
+  confidence-contract violation and demonstrated adapter presentation issue.
+
+The prior pre-dispatch limitation remains real, but this new run proves the PFE
+confidence and narration behaviors can also occur after specialist skill
+invocation. The PFE confidence issue is now reproduced across two live runs
+under different dispatch-observability conditions. This is not a defect rate
+and does not generalize to all skills.
+
 ## Instrumentation Open Issue
 
 PowerShell diagnostic output displayed UTF-8 mojibake such as

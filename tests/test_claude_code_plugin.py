@@ -206,6 +206,42 @@ class ClaudeCodePluginSkillTests(unittest.TestCase):
         )
         self.assertIn("must not supply the missing evidence", text)
 
+    def test_pfe_confidence_gate_is_operational(self) -> None:
+        text = compact(skill_text("pfe-review"))
+        self.assertIn(
+            "Identify which artifact, sections, pages, repository areas, or evidence were actually inspected",
+            text,
+        )
+        self.assertIn(
+            "Define the scope of each conclusion before evaluating the whole PFE",
+            text,
+        )
+        self.assertIn("No evidence is not 0% confidence", text)
+        self.assertIn("It is Unknown for the unsupported claim", text)
+        self.assertIn(
+            'Never convert "not evaluable" into a numeric confidence value',
+            text,
+        )
+        self.assertIn(
+            "keep confidence and conclusions scoped to the reviewed material",
+            text,
+        )
+        self.assertIn(
+            "Only express qualitative confidence for a specific claim when there is an observable basis",
+            text,
+        )
+
+    def test_pfe_presentation_rule_blocks_internal_narration(self) -> None:
+        text = compact(skill_text("pfe-review"))
+        self.assertIn(
+            "without mentioning the skill, its rules, its prompt, its reference files, or internal routing",
+            text,
+        )
+        self.assertIn(
+            "unless the user explicitly asks about plugin implementation",
+            text,
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

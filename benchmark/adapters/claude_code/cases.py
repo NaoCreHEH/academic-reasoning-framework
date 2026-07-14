@@ -10,6 +10,17 @@ PFE = "arf-academic:pfe-review"
 EXAM = "arf-academic:exam-generation"
 PYTHON = "arf-academic:python-teaching"
 
+INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS = (
+    "ce skill",
+    "du skill",
+    "le skill que",
+    "la regle de ce skill",
+    "the skill instructions",
+    "the skill says",
+    "internal skill instructions",
+    "reference file says",
+)
+
 
 CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
     ClaudeAdapterCase(
@@ -117,7 +128,8 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
             "cree une classe",
             "utilise une classe",
             "object-oriented solution",
-        ),
+        )
+        + INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
         tags=("response-contract", "python", "b1", "french"),
     ),
     ClaudeAdapterCase(
@@ -157,7 +169,8 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
         response_forbidden_patterns=(
             "c'est une erreur certaine",
             "composition obligatoire",
-        ),
+        )
+        + INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
         tags=("response-contract", "uml", "multiple-valid-solutions", "french"),
     ),
     ClaudeAdapterCase(
@@ -175,6 +188,12 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
                     "pas assez d'information",
                     "sans les regles metier",
                     "sans le cahier des charges",
+                    "sans cahier des charges",
+                    "sans regles metier",
+                    "ni regles metier",
+                    "on ne peut pas qualifier ce choix d'erreur",
+                    "supposition, pas une deduction",
+                    "pas une erreur demontree",
                     "depend du cycle de vie",
                     "il faut savoir si",
                     "impossible de trancher",
@@ -201,7 +220,8 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
         response_forbidden_patterns=(
             "l'association est une erreur certaine",
             "la composition est obligatoire",
-        ),
+        )
+        + INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
         tags=(
             "response",
             "uml",
@@ -238,6 +258,7 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
                 match_mode=ResponseMarkerMatchMode.ANY,
             ),
         ),
+        response_forbidden_patterns=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
         tags=("response-contract", "architecture", "evidence", "french"),
     ),
     ClaudeAdapterCase(
@@ -262,7 +283,8 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
         response_forbidden_patterns=(
             "oui, c'est suffisant",
             "oui c'est suffisant",
-        ),
+        )
+        + INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
         tags=("response-contract", "pfe", "academic", "french"),
     ),
     ClaudeAdapterCase(
@@ -284,10 +306,19 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
                     "ce serait invente",
                     "impossible d'evaluer",
                     "sans le rapport",
+                    "sans rapport",
+                    "sans document",
+                    "aucune section",
+                    "aucune page",
+                    "aucun extrait",
+                    "aucune base pour evaluer",
+                    "aucune base pour juger",
+                    "non evaluable",
                 ),
                 match_mode=ResponseMarkerMatchMode.ANY,
             ),
         ),
+        response_forbidden_patterns=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
         response_forbidden_regexes=(
             r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",
             r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",

@@ -28,15 +28,23 @@ MCQs, QCMs, examination content, or another assessment instrument,
 ## Workflow
 
 1. Identify the academic artifact and evaluation objective.
-2. Determine what sections or pages were actually reviewed.
-3. Separate company/project value from student contribution.
-4. Identify the student's personal decisions and deliverables.
-5. Evaluate scope, methodology, justification, critical analysis,
+2. Identify which artifact, sections, pages, repository areas, or evidence were
+   actually inspected.
+3. Define the scope of each conclusion before evaluating the whole PFE, whole
+   report, overall project quality, or overall student contribution.
+4. If no relevant artifact was inspected, confidence for the unsupported claim
+   is Unknown or the conclusion is not evaluable; do not produce an overall PFE
+   judgment.
+5. If only part of the artifact was inspected, keep confidence and conclusions
+   scoped to the reviewed material and do not generalize to the complete PFE.
+6. Separate company/project value from student contribution.
+7. Identify the student's personal decisions and deliverables.
+8. Evaluate scope, methodology, justification, critical analysis,
    documentation, tests, security, and technical depth where present.
-6. Identify missing evidence rather than inventing missing work.
-7. Distinguish weaknesses in the report from weaknesses in the underlying
+9. Identify missing evidence rather than inventing missing work.
+10. Distinguish weaknesses in the report from weaknesses in the underlying
    project.
-8. Formulate analysis or comprehension questions that cannot be answered by
+11. Formulate analysis or comprehension questions that cannot be answered by
    copying one sentence from the report.
 
 ## Prudence Rules
@@ -44,6 +52,13 @@ MCQs, QCMs, examination content, or another assessment instrument,
 When only selected report sections are available, state the limitation and do
 not generalize to the whole PFE. Do not infer missing implementation work from
 missing report pages alone. Keep praise and critique tied to reviewed content.
+
+No evidence is not 0% confidence. It is Unknown for the unsupported claim.
+Never convert "not evaluable" into a numeric confidence value. Only express
+qualitative confidence for a specific claim when there is an observable basis.
+Use ARF qualitative confidence terms when explicit confidence is materially
+useful: Confirmed, Strongly supported, Supported, Plausible, Speculative,
+Unknown, or Not assessed. Do not mechanically label every finding.
 
 When asked for oral questions, yield output ownership to
 `/arf-academic:exam-generation` conceptually. If manually invoked, identify
@@ -55,6 +70,10 @@ actual assessment instrument.
 Emphasize student contribution, justification quality, methodological rigor,
 technical depth, critical reflection, and evidence limitations. Separate report
 quality from project quality.
+
+Apply this skill and the shared ARF references without mentioning the skill,
+its rules, its prompt, its reference files, or internal routing unless the user
+explicitly asks about plugin implementation.
 
 ## Positive Example
 
