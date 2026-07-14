@@ -49,7 +49,7 @@ class ClaudeCliInvoker:
             help_result = subprocess.run(
                 [claude, "--help"],
                 capture_output=True,
-                text=True,
+                text=False,
                 timeout=self.timeout_seconds,
                 check=False,
             )
@@ -58,7 +58,14 @@ class ClaudeCliInvoker:
                 available=False,
                 unavailable_reason="Claude CLI help inspection timed out",
             )
-        help_text = f"{help_result.stdout}\n{help_result.stderr}"
+        try:
+            help_stdout, help_stderr = _decode_process_output(help_result)
+        except UnicodeDecodeError:
+            return ClaudeInvocationObservation(
+                available=False,
+                unavailable_reason="Claude CLI help output was not valid UTF-8",
+            )
+        help_text = f"{help_stdout}\n{help_stderr}"
         if "--plugin-dir" not in help_text:
             return ClaudeInvocationObservation(
                 available=False,
@@ -90,7 +97,7 @@ class ClaudeCliInvoker:
                     prompt,
                 ],
                 capture_output=True,
-                text=True,
+                text=False,
                 timeout=self.timeout_seconds,
                 check=False,
             )
@@ -106,15 +113,25 @@ class ClaudeCliInvoker:
                 duration_seconds=duration,
             )
         duration = time.monotonic() - started
-        stream = parse_claude_stream(result.stdout)
+        try:
+            stdout, stderr = _decode_process_output(result)
+        except UnicodeDecodeError:
+            return ClaudeInvocationObservation(
+                available=True,
+                response_text=None,
+                invocation_error="Claude CLI output was not valid UTF-8",
+                dispatch_observation_reason="skill identity not observable",
+                duration_seconds=duration,
+            )
+        stream = parse_claude_stream(stdout)
         return ClaudeInvocationObservation(
             available=True,
             response_text=stream.response_text,
             observed_skills=stream.observed_skills,
             process_result=ClaudeInvocationResult(
                 returncode=result.returncode,
-                stdout=result.stdout,
-                stderr=result.stderr,
+                stdout=stdout,
+                stderr=stderr,
             ),
             dispatch_observation_reason=(
                 None if stream.observed_skills else "skill identity not observable"
@@ -129,6 +146,22 @@ class ClaudeCliInvoker:
             duration_seconds=duration,
             raw_response_available=stream.raw_response_available,
         )
+
+
+def _decode_process_output(
+    result: subprocess.CompletedProcess,
+) -> tuple[str, str]:
+    """Decode Claude subprocess pipes with a strict UTF-8 boundary."""
+
+    return _decode_pipe(result.stdout), _decode_pipe(result.stderr)
+
+
+def _decode_pipe(value: bytes | str | None) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    return value.decode("utf-8", errors="strict")
 
 
 def run_claude_adapter_evaluation(

@@ -23,6 +23,7 @@ PLUGIN_DIR = ROOT / "implementations" / "claude-code" / "arf-academic"
 
 
 def main(argv: list[str] | None = None) -> int:
+    _configure_utf8_diagnostics()
     parser = argparse.ArgumentParser(
         description="Run live Claude Code adapter evaluation cases."
     )
@@ -78,6 +79,14 @@ def main(argv: list[str] | None = None) -> int:
     if summary.all_skipped:
         return 3
     return 0
+
+
+def _configure_utf8_diagnostics() -> None:
+    # Claude stream data and local diagnostic output are expected to be UTF-8.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
 
 
 def _select_cases(
