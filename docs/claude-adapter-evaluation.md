@@ -78,6 +78,20 @@ Loaded instructions and obeyed instructions are different observable claims. A
 post-dispatch contract violation is an adapter behavioral result, not evidence
 that the skill was never loaded.
 
+## UTF-8 Process Boundary
+
+Claude Code structured output is decoded explicitly as UTF-8. The live adapter
+does not use the host locale encoding for Claude subprocess pipes.
+
+Invalid UTF-8 from the live stream invocation is an attempted evaluation
+failure, because the CLI existed and the case invocation began. Invalid UTF-8
+during `claude --help` inspection is an unavailable capability-inspection state,
+because evaluation cannot reliably begin without decoded capability output.
+
+Diagnostic stdout and stderr are configured for UTF-8 when Python supports
+stream reconfiguration. This affects local rendering only; benchmark matching
+uses the decoded Python strings produced at the subprocess boundary.
+
 ## Response Markers
 
 Response-contract evaluation uses shallow mechanical markers:
