@@ -76,10 +76,16 @@ validation:
 ARF deterministic core and benchmarks
   -> Claude Code plugin adapter
   -> live adapter evaluation boundary
+  -> immutable result summary
+  -> text/JSON evidence reporting
+  -> optional local UTF-8 report file
 ```
 
 Model behavior evaluation is environment-dependent and does not replace
 deterministic repository validation.
+
+Live baseline evidence records observed matrices for review, but it is not a
+CI golden snapshot.
 
 ### Benchmark
 

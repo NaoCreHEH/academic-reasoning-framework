@@ -48,6 +48,18 @@ When Claude Code returns a response but does not expose selected skill identity,
 dispatch is reported as `SKIPPED` with an observability reason. Response-contract
 evaluation may still run against the response.
 
+## Missing-artifact Cases
+
+Some isolated live prompts refer to an artifact that is not supplied to the
+fresh invocation. Claude may clarify the missing artifact before invoking a
+specialist Skill. Artifact requirement metadata records this test context.
+
+Response markers may verify that the answer preserved the evidence boundary,
+such as asking for a missing diagram or Python submission instead of inventing
+grounded findings. A correct missing-artifact clarification does not convert
+unobservable dispatch into PASSED. Dispatch remains SKIPPED unless the Skill
+tool invocation is publicly observed.
+
 ## Pre-dispatch Governance Gap
 
 The shared ARF reasoning contract is bundled as a skill reference. If Claude
@@ -137,6 +149,12 @@ live invocation means evaluation was attempted and failed; it is reported as
 Malformed non-empty structured output is a failed attempted evaluation, not a
 skipped environment limitation.
 
+## Baselines
+
+Live matrices may be recorded as evidence documents under the Claude adapter
+baseline directory. They are not deterministic golden tests and are not used as
+CI expectations. Deterministic CI remains separate from live adapter evidence.
+
 ## CLI Usage
 
 ```text
@@ -145,6 +163,8 @@ python scripts/run_claude_adapter_evaluation.py --format json
 python scripts/run_claude_adapter_evaluation.py --case dispatch-python-mcq
 python scripts/run_claude_adapter_evaluation.py --tag collision
 python scripts/run_claude_adapter_evaluation.py --show-responses --timeout 180
+python scripts/run_claude_adapter_evaluation.py --format json --output reports/live.json
+python scripts/run_claude_adapter_evaluation.py --show-responses --output reports/live.txt
 ```
 
 Exit codes:
@@ -162,6 +182,12 @@ Use `--show-responses` for local diagnostic runs when public response evidence
 is needed. It applies only to text output and should not be used for automated
 logs containing sensitive student data. The default live invocation timeout is
 180 seconds.
+
+Use `--output` to write the rendered text or JSON report to an existing local
+path with UTF-8 encoding. The console output is unchanged. JSON output never
+includes public response text; text output with `--show-responses` may include
+the same public responses printed to the console. The command does not write
+raw stream data, stderr, Claude sessions, or hidden reasoning.
 
 Skill answer quality and dispatch remain separate. A good answer does not prove
 that the expected skill was dispatched, and a dispatch observation does not prove

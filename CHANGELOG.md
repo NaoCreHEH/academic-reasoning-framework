@@ -16,6 +16,9 @@ All notable changes to this project will be documented in this file.
   marker false negative, add a PFE operational confidence gate, detect narrow
   internal adapter narration, and distinguish pre-dispatch governance from
   post-dispatch instruction adherence
+- Claude live-evaluation baseline work now records the first complete matrix,
+  hardens UML alternative-validity and direct named-skill narration detection,
+  and adds missing-artifact case metadata and response-boundary markers
 - Claude adapter evaluation now enforces an explicit UTF-8 subprocess boundary,
   covers the Windows cp1252 crash regression, and configures diagnostic streams
   for UTF-8 where Python supports it
@@ -28,6 +31,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 
 - Claude Code adapter evaluation harness for live dispatch and response-contract checks
+- Reusable Claude live-evaluation serializer and optional UTF-8 report output
 - Missing-lifecycle-evidence UML live regression case for association versus
   composition calibration
 - Claude Code reference plugin with five ARF academic skills

@@ -18,6 +18,14 @@ class ClaudeEvaluationStatus(Enum):
     SKIPPED = "skipped"
 
 
+class ClaudeCaseArtifactRequirement(Enum):
+    """Whether a live case requires an external artifact to execute fully."""
+
+    NONE = "none"
+    OPTIONAL = "optional"
+    REQUIRED = "required"
+
+
 class ResponseMarkerMatchMode(Enum):
     """How a response marker matches its patterns."""
 
