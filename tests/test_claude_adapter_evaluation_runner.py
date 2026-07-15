@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import subprocess
 from unittest import mock
 import unittest
@@ -372,12 +373,237 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
             "Claude CLI help inspection timed out",
         )
 
+    def test_help_subprocess_uses_byte_mode(self):
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout=b"--plugin-dir --print",
+            stderr=b"",
+        )
+        live_result = subprocess.CompletedProcess(
+            ["claude", "--print"],
+            0,
+            stdout=_stream_bytes("ok"),
+            stderr=b"",
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                side_effect=[help_result, live_result],
+            ) as run:
+                ClaudeCliInvoker(timeout_seconds=1).invoke("Prompt", PLUGIN_DIR)
+        self.assertFalse(run.call_args_list[0].kwargs["text"])
+        self.assertNotIn("encoding", run.call_args_list[0].kwargs)
+        self.assertNotIn("errors", run.call_args_list[0].kwargs)
+
+    def test_live_subprocess_uses_byte_mode(self):
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout=b"--plugin-dir --print",
+            stderr=b"",
+        )
+        live_result = subprocess.CompletedProcess(
+            ["claude", "--print"],
+            0,
+            stdout=_stream_bytes("ok"),
+            stderr=b"",
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                side_effect=[help_result, live_result],
+            ) as run:
+                ClaudeCliInvoker(timeout_seconds=1).invoke("Prompt", PLUGIN_DIR)
+        self.assertFalse(run.call_args_list[1].kwargs["text"])
+        self.assertNotIn("encoding", run.call_args_list[1].kwargs)
+        self.assertNotIn("errors", run.call_args_list[1].kwargs)
+
+    def test_valid_utf8_help_bytes_decode(self):
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout="Options: --plugin-dir --print périmètre".encode("utf-8"),
+            stderr=b"",
+        )
+        live_result = subprocess.CompletedProcess(
+            ["claude", "--print"],
+            0,
+            stdout=_stream_bytes("ok"),
+            stderr=b"",
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                side_effect=[help_result, live_result],
+            ):
+                observation = ClaudeCliInvoker(timeout_seconds=1).invoke(
+                    "Prompt",
+                    PLUGIN_DIR,
+                )
+        self.assertTrue(observation.available)
+        self.assertIsNone(observation.invocation_error)
+
+    def test_valid_french_utf8_stream_reaches_parser_intact(self):
+        response = "sémantique dépôt périmètre"
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout=b"--plugin-dir --print",
+            stderr=b"",
+        )
+        live_result = subprocess.CompletedProcess(
+            ["claude", "--print"],
+            0,
+            stdout=_stream_bytes(response),
+            stderr="sortie d'erreur lisible".encode("utf-8"),
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                side_effect=[help_result, live_result],
+            ):
+                observation = ClaudeCliInvoker(timeout_seconds=1).invoke(
+                    "Prompt",
+                    PLUGIN_DIR,
+                )
+        self.assertEqual(observation.response_text, response)
+        self.assertEqual(observation.process_result.stdout, _stream_text(response))
+        self.assertEqual(observation.process_result.stderr, "sortie d'erreur lisible")
+
+    def test_invalid_utf8_help_output_is_unavailable(self):
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout=b"--plugin-dir --print \x9d",
+            stderr=b"",
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                return_value=help_result,
+            ):
+                observation = ClaudeCliInvoker(timeout_seconds=1).invoke(
+                    "Prompt",
+                    PLUGIN_DIR,
+                )
+        self.assertFalse(observation.available)
+        self.assertEqual(
+            observation.unavailable_reason,
+            "Claude CLI help output was not valid UTF-8",
+        )
+
+    def test_invalid_utf8_help_stderr_is_unavailable(self):
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout=b"--plugin-dir --print",
+            stderr=b"\x9d",
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                return_value=help_result,
+            ):
+                observation = ClaudeCliInvoker(timeout_seconds=1).invoke(
+                    "Prompt",
+                    PLUGIN_DIR,
+                )
+        self.assertFalse(observation.available)
+        self.assertEqual(
+            observation.unavailable_reason,
+            "Claude CLI help output was not valid UTF-8",
+        )
+
+    def test_invalid_utf8_live_stdout_is_attempted_failure(self):
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout=b"--plugin-dir --print",
+            stderr=b"",
+        )
+        live_result = subprocess.CompletedProcess(
+            ["claude", "--print"],
+            0,
+            stdout=b"\x9d",
+            stderr=b"",
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                side_effect=[help_result, live_result],
+            ):
+                observation = ClaudeCliInvoker(timeout_seconds=1).invoke(
+                    "Prompt",
+                    PLUGIN_DIR,
+                )
+        result = _run(_case(), observation)
+        self.assertTrue(observation.available)
+        self.assertEqual(
+            observation.invocation_error,
+            "Claude CLI output was not valid UTF-8",
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.FAILED)
+        self.assertIs(result.response_contract_status, ClaudeEvaluationStatus.FAILED)
+
+    def test_invalid_utf8_live_stderr_is_attempted_failure(self):
+        help_result = subprocess.CompletedProcess(
+            ["claude", "--help"],
+            0,
+            stdout=b"--plugin-dir --print",
+            stderr=b"",
+        )
+        live_result = subprocess.CompletedProcess(
+            ["claude", "--print"],
+            0,
+            stdout=_stream_bytes("ok"),
+            stderr=b"\x9d",
+        )
+        with mock.patch(
+            "benchmark.adapters.claude_code.runner.shutil.which",
+            return_value="claude",
+        ):
+            with mock.patch(
+                "benchmark.adapters.claude_code.runner.subprocess.run",
+                side_effect=[help_result, live_result],
+            ):
+                observation = ClaudeCliInvoker(timeout_seconds=1).invoke(
+                    "Prompt",
+                    PLUGIN_DIR,
+                )
+        self.assertTrue(observation.available)
+        self.assertEqual(
+            observation.invocation_error,
+            "Claude CLI output was not valid UTF-8",
+        )
+
     def test_actual_invocation_timeout_becomes_failed_observation(self):
         help_result = subprocess.CompletedProcess(
             ["claude", "--help"],
             0,
-            stdout="--plugin-dir --print",
-            stderr="",
+            stdout=b"--plugin-dir --print",
+            stderr=b"",
         )
         with mock.patch(
             "benchmark.adapters.claude_code.runner.shutil.which",
@@ -446,6 +672,14 @@ def _run(case, observation):
         plugin_dir=PLUGIN_DIR,
     )
     return summary.results[0]
+
+
+def _stream_text(response: str) -> str:
+    return json.dumps({"type": "result", "result": response}, ensure_ascii=False) + "\n"
+
+
+def _stream_bytes(response: str) -> bytes:
+    return _stream_text(response).encode("utf-8")
 
 
 if __name__ == "__main__":

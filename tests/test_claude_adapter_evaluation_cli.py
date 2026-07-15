@@ -288,6 +288,23 @@ class ClaudeAdapterEvaluationCliTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("Public final response", written)
 
+    def test_configure_utf8_diagnostics_reconfigures_stdout_and_stderr(self):
+        stdout = mock.Mock()
+        stderr = mock.Mock()
+        with mock.patch.object(cli.sys, "stdout", stdout):
+            with mock.patch.object(cli.sys, "stderr", stderr):
+                cli._configure_utf8_diagnostics()
+        stdout.reconfigure.assert_called_once_with(encoding="utf-8")
+        stderr.reconfigure.assert_called_once_with(encoding="utf-8")
+
+    def test_configure_utf8_diagnostics_ignores_streams_without_reconfigure(self):
+        class MinimalStream:
+            pass
+
+        with mock.patch.object(cli.sys, "stdout", MinimalStream()):
+            with mock.patch.object(cli.sys, "stderr", MinimalStream()):
+                cli._configure_utf8_diagnostics()
+
 
 def _run_cli(argv, observation):
     FakeInvoker.observation = observation

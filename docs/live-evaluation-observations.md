@@ -122,15 +122,20 @@ invocation. The PFE confidence issue is now reproduced across two live runs
 under different dispatch-observability conditions. This is not a defect rate
 and does not generalize to all skills.
 
-## Instrumentation Open Issue
+## Windows UTF-8 Instrumentation Finding
 
-PowerShell diagnostic output displayed UTF-8 mojibake such as
-`sÃƒÂ©mantique`, `dÃƒÂ©pÃƒÂ´t`, and `pÃƒÂ©rimÃƒÂ¨tre`. The parsed response markers
-passed despite display corruption, indicating the internal Python string used
-for evaluation may differ from terminal rendering. The PowerShell display
-encoding path needs separate investigation. This is not evidence that source
-text is corrupted without raw-byte evidence, and no encoding workaround is
-implemented in this PR.
+PowerShell diagnostic output displayed UTF-8 mojibake such as corrupted forms
+of `semantique`, `depot`, and `perimetre`. A later full live case run
+reproduced a Windows subprocess decoding crash with `UnicodeDecodeError`.
+
+The evaluator previously allowed the host locale to choose subprocess text
+decoding. On the observed Windows environment this was cp1252, while Claude
+stream data contained UTF-8. The subprocess boundary is now explicit UTF-8.
+
+This provides direct evidence that the previous mojibake was at least
+associated with an unsafe locale-dependent subprocess decoding boundary. It
+does not prove every previous mojibake byte transformation has been fully
+reconstructed.
 
 ## First Complete 16-Case Matrix
 

@@ -19,6 +19,9 @@ All notable changes to this project will be documented in this file.
 - Claude live-evaluation baseline work now records the first complete matrix,
   hardens UML alternative-validity and direct named-skill narration detection,
   and adds missing-artifact case metadata and response-boundary markers
+- Claude adapter evaluation now enforces an explicit UTF-8 subprocess boundary,
+  covers the Windows cp1252 crash regression, and configures diagnostic streams
+  for UTF-8 where Python supports it
 - Claude Code adapter evaluation now observes public stream-json events,
   plugin load state, invocation duration, and diacritic-insensitive markers
 - Structured routing decisions expose structural status and ambiguity candidates
