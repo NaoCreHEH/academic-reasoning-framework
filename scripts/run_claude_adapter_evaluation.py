@@ -15,6 +15,7 @@ from benchmark.adapters.claude_code import (  # noqa: E402
     ClaudeAdapterCase,
     ClaudeAdapterEvaluationSummary,
     ClaudeCliInvoker,
+    evaluation_summary_to_dict,
     run_claude_adapter_evaluation,
 )
 
@@ -43,12 +44,19 @@ def main(argv: list[str] | None = None) -> int:
         default=180,
         help="Per-case Claude invocation timeout in seconds.",
     )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Write the rendered report to an existing local path.",
+    )
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--case", help="Run one built-in case identifier.")
     selection.add_argument("--tag", help="Run built-in cases containing a tag.")
     args = parser.parse_args(argv)
     if args.show_responses and args.format == "json":
         parser.error("--show-responses is only supported with --format text")
+    if args.output is not None and not args.output.parent.exists():
+        parser.error(f"output parent directory does not exist: {args.output.parent}")
 
     try:
         cases = _select_cases(args.case, args.tag)
@@ -68,16 +76,30 @@ def main(argv: list[str] | None = None) -> int:
         on_observation=remember_response if args.show_responses else None,
     )
 
-    if args.format == "json":
-        print(_to_json(summary))
-    else:
-        print(_to_text(summary, response_texts if args.show_responses else None))
+    rendered = _render_report(
+        summary,
+        args.format,
+        response_texts if args.show_responses else None,
+    )
+    print(rendered)
+    if args.output is not None:
+        args.output.write_text(rendered, encoding="utf-8")
 
     if summary.any_failed:
         return 1
     if summary.all_skipped:
         return 3
     return 0
+
+
+def _render_report(
+    summary: ClaudeAdapterEvaluationSummary,
+    output_format: str,
+    response_texts: dict[str, str] | None = None,
+) -> str:
+    if output_format == "json":
+        return _to_json(summary)
+    return _to_text(summary, response_texts)
 
 
 def _select_cases(
@@ -149,31 +171,7 @@ def _to_text(
 
 
 def _to_json(summary: ClaudeAdapterEvaluationSummary) -> str:
-    payload = {
-        "total_cases": summary.total_cases,
-        "dispatch_passed": summary.dispatch_passed,
-        "dispatch_failed": summary.dispatch_failed,
-        "dispatch_skipped": summary.dispatch_skipped,
-        "response_passed": summary.response_passed,
-        "response_failed": summary.response_failed,
-        "response_skipped": summary.response_skipped,
-        "fully_successful_cases": summary.fully_successful_cases,
-        "results": [
-            {
-                "case_identifier": result.case_identifier,
-                "dispatch_status": result.dispatch_status.value,
-                "response_contract_status": result.response_contract_status.value,
-                "observed_skill": result.observed_skill,
-                "failed_markers": list(result.failed_markers),
-                "matched_forbidden_patterns": list(
-                    result.matched_forbidden_patterns
-                ),
-                "diagnostic": result.diagnostic,
-            }
-            for result in summary.results
-        ],
-    }
-    return json.dumps(payload, indent=2)
+    return json.dumps(evaluation_summary_to_dict(summary), indent=2)
 
 
 if __name__ == "__main__":

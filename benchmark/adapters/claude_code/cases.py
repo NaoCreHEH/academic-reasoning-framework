@@ -1,6 +1,9 @@
 """Built-in Claude Code adapter evaluation cases."""
 
-from benchmark.adapters.claude_code.enums import ResponseMarkerMatchMode
+from benchmark.adapters.claude_code.enums import (
+    ClaudeCaseArtifactRequirement,
+    ResponseMarkerMatchMode,
+)
 from benchmark.adapters.claude_code.models import ClaudeAdapterCase, ResponseMarker
 
 
@@ -19,6 +22,17 @@ INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS = (
     "the skill says",
     "internal skill instructions",
     "reference file says",
+)
+
+INTERNAL_ADAPTER_NARRATION_FORBIDDEN_REGEXES = (
+    r"\ble\s+skill\s+`?(?:arf-academic:)?pfe-review`?",
+    r"\bj(?:'|\u2019)invoquerai\s+le\s+skill\b",
+    r"\bje\s+vais\s+invoquer\s+le\s+skill\b",
+    r"\bj(?:'|\u2019)utilise\s+le\s+skill\b",
+    r"\bj(?:'|\u2019)utiliserai\s+le\s+skill\b",
+    r"\bI\s+will\s+invoke\s+the\s+skill\b",
+    r"\busing\s+the\s+arf-academic:",
+    r"\binvoke\s+the\s+arf-academic:",
 )
 
 
@@ -79,6 +93,22 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
         prompt="A partir des erreurs de ce diagramme UML, cree cinq questions d'examen.",
         expected_skill=EXAM,
         forbidden_skills=(UML,),
+        response_markers=(
+            ResponseMarker(
+                identifier="missing-diagram-boundary",
+                patterns=(
+                    "pas recu de diagramme",
+                    "aucun diagramme",
+                    "fournir le diagramme",
+                    "il me faut le diagramme",
+                    "sans le diagramme",
+                    "identifier les erreurs reelles",
+                    "plutot que d'en inventer",
+                ),
+                match_mode=ResponseMarkerMatchMode.ANY,
+            ),
+        ),
+        artifact_requirement=ClaudeCaseArtifactRequirement.REQUIRED,
         tags=("dispatch", "collision", "uml", "assessment", "french"),
     ),
     ClaudeAdapterCase(
@@ -89,6 +119,23 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
         ),
         expected_skill=EXAM,
         forbidden_skills=(PYTHON,),
+        response_markers=(
+            ResponseMarker(
+                identifier="missing-submission-boundary",
+                patterns=(
+                    "pas encore le contenu de la soumission",
+                    "ou se trouve la soumission",
+                    "soumission python",
+                    "coller le code",
+                    "colle directement le code",
+                    "chemin du fichier",
+                    "je ne trouve pas de fichier",
+                    "pas d'une soumission etudiante",
+                ),
+                match_mode=ResponseMarkerMatchMode.ANY,
+            ),
+        ),
+        artifact_requirement=ClaudeCaseArtifactRequirement.REQUIRED,
         tags=("dispatch", "collision", "python", "question-bank", "french"),
     ),
     ClaudeAdapterCase(
@@ -130,6 +177,7 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
             "object-oriented solution",
         )
         + INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
+        response_forbidden_regexes=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_REGEXES,
         tags=("response-contract", "python", "b1", "french"),
     ),
     ClaudeAdapterCase(
@@ -148,6 +196,15 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
                     "depend du cycle de vie",
                     "selon le cycle de vie",
                     "association peut etre valide",
+                    "ce n'est pas automatique",
+                    "pas automatique",
+                    "association simple est correcte",
+                    "association est correcte",
+                    "pas une erreur en soi",
+                    "n'est pas une erreur en soi",
+                    "composition n'est pas imposee",
+                    "composition n'est jamais imposee",
+                    "depend de la semantique de cycle de vie",
                 ),
                 match_mode=ResponseMarkerMatchMode.ANY,
             ),
@@ -168,9 +225,12 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
         ),
         response_forbidden_patterns=(
             "c'est une erreur certaine",
+            "l'association est une erreur certaine",
             "composition obligatoire",
+            "la composition est obligatoire",
         )
         + INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
+        response_forbidden_regexes=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_REGEXES,
         tags=("response-contract", "uml", "multiple-valid-solutions", "french"),
     ),
     ClaudeAdapterCase(
@@ -222,6 +282,7 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
             "la composition est obligatoire",
         )
         + INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
+        response_forbidden_regexes=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_REGEXES,
         tags=(
             "response",
             "uml",
@@ -259,6 +320,7 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
             ),
         ),
         response_forbidden_patterns=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
+        response_forbidden_regexes=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_REGEXES,
         tags=("response-contract", "architecture", "evidence", "french"),
     ),
     ClaudeAdapterCase(
@@ -285,6 +347,7 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
             "oui c'est suffisant",
         )
         + INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
+        response_forbidden_regexes=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_REGEXES,
         tags=("response-contract", "pfe", "academic", "french"),
     ),
     ClaudeAdapterCase(
@@ -321,7 +384,8 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
         response_forbidden_patterns=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
         response_forbidden_regexes=(
             r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",
-            r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",
+            r"\bconfiance\b(?:(?!\.\s+[A-Z])[\s\S]){0,80}\d{1,3}\s*%",
+            *INTERNAL_ADAPTER_NARRATION_FORBIDDEN_REGEXES,
         ),
         tags=("response-contract", "pfe", "confidence", "french"),
     ),

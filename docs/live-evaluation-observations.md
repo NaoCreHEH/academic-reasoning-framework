@@ -131,3 +131,50 @@ for evaluation may differ from terminal rendering. The PowerShell display
 encoding path needs separate investigation. This is not evidence that source
 text is corrupted without raw-byte evidence, and no encoding workaround is
 implemented in this PR.
+
+## First Complete 16-Case Matrix
+
+After the locale-dependent subprocess crash was addressed in the live
+evaluation tooling, the full 16-case matrix completed once on Windows with
+Python 3.13 and a local Claude Code CLI.
+
+Observed aggregate counts:
+
+- Cases: 16
+- Dispatch passed/failed/skipped: 13/0/3
+- Response contract passed/failed/skipped: 4/2/10
+- Fully successful cases: 12
+
+No wrong dispatch was observed among the 13 cases with observable dispatch
+passes. This does not prove universal routing correctness.
+
+Inspected reruns found:
+
+- `response-uml-choice-not-error` preserved the UML evidence gate and treated
+  the association as not inherently erroneous. The response failure was an
+  `alternative-validity` marker false negative.
+- `response-confidence-no-percentage` produced a real confidence-percentage
+  contract violation in the matrix. A later targeted rerun did not reproduce
+  numeric confidence, but it exposed direct named-skill narration that the old
+  markers missed.
+- `dispatch-uml-exam` was SKIPPED in the full matrix, but a targeted rerun later
+  observed `arf-academic:exam-generation` and refused to invent missing diagram
+  errors.
+- `dispatch-python-question-bank` remained dispatch-unobservable in two
+  targeted reruns while clarifying the missing Python submission. This is
+  recorded as reproduced dispatch non-observation under missing-artifact
+  clarification, not as a demonstrated wrong dispatch.
+
+A correct missing-artifact clarification does not convert unobservable dispatch
+into PASSED.
+
+## Remaining Rendering Question
+
+The locale-dependent subprocess crash is fixed in the UTF-8 process-boundary
+work, and the full 16-case run completed. Copied PowerShell `--show-responses`
+text still appeared mojibaked in the observed conversation transcript.
+
+This may involve terminal rendering, clipboard transfer, transcript rendering,
+or another output boundary. Benchmark internal UTF-8 matching continued to
+function. No further encoding fix should be made without isolating the
+byte/rendering boundary.

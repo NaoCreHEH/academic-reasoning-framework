@@ -4,6 +4,7 @@ from unittest import mock
 import unittest
 
 from benchmark.adapters.claude_code.enums import (
+    ClaudeCaseArtifactRequirement,
     ClaudeEvaluationStatus,
     ResponseMarkerMatchMode,
 )
@@ -87,6 +88,45 @@ class ClaudeAdapterEvaluationRunnerTests(unittest.TestCase):
         result = _run(_case(), _observation(response_text="ok"))
         self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.SKIPPED)
         self.assertIn("not observable", result.diagnostic)
+
+    def test_response_contract_pass_does_not_create_dispatch_evidence(self):
+        result = _run(
+            _case(
+                response_markers=(
+                    ResponseMarker(
+                        "missing-boundary",
+                        ("fournir le diagramme",),
+                        ResponseMarkerMatchMode.ANY,
+                    ),
+                ),
+            ),
+            _observation(
+                observed_skill=None,
+                response_text="Merci de fournir le diagramme.",
+            ),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.SKIPPED)
+        self.assertIs(
+            result.response_contract_status,
+            ClaudeEvaluationStatus.PASSED,
+        )
+
+    def test_required_artifact_metadata_does_not_change_dispatch_status(self):
+        result = _run(
+            _case(artifact_requirement=ClaudeCaseArtifactRequirement.REQUIRED),
+            _observation(response_text="fournir le diagramme"),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.SKIPPED)
+
+    def test_correct_response_vocabulary_is_not_dispatch_evidence(self):
+        result = _run(
+            _case(expected_skill="arf-academic:exam-generation"),
+            _observation(
+                observed_skill=None,
+                response_text="QCM, questions ouvertes, banque de questions",
+            ),
+        )
+        self.assertIs(result.dispatch_status, ClaudeEvaluationStatus.SKIPPED)
 
     def test_explicit_plugin_load_failure_fails_both_dimensions(self):
         result = _run(

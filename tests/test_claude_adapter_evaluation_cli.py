@@ -1,6 +1,8 @@
 import contextlib
 from io import StringIO
 import json
+from pathlib import Path
+import tempfile
 from unittest import mock
 import unittest
 
@@ -192,6 +194,99 @@ class ClaudeAdapterEvaluationCliTests(unittest.TestCase):
         with self.assertRaises(SystemExit) as context:
             cli.main(["--format", "json", "--show-responses"])
         self.assertEqual(context.exception.code, 2)
+
+    def test_text_output_file_is_written_utf8_and_console_still_prints(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "report.txt"
+            output, code = _run_cli(
+                ["--case", "response-architecture-files-not-names", "--output", str(output_path)],
+                ClaudeInvocationObservation(
+                    available=True,
+                    response_text="Cela ne prouve pas la qualite; il faut inspecter.",
+                    observed_skill="arf-academic:architecture-review",
+                    process_result=ClaudeInvocationResult(0, "", ""),
+                ),
+            )
+            written = output_path.read_text(encoding="utf-8")
+        self.assertEqual(code, 0)
+        self.assertIn("response-architecture-files-not-names", output)
+        self.assertEqual(written, output.rstrip("\n"))
+
+    def test_json_output_file_is_written_utf8_and_parses(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "report.json"
+            output, code = _run_cli(
+                [
+                    "--format",
+                    "json",
+                    "--case",
+                    "dispatch-python-mcq",
+                    "--output",
+                    str(output_path),
+                ],
+                ClaudeInvocationObservation(
+                    available=False,
+                    unavailable_reason="Claude CLI not found",
+                ),
+            )
+            payload = json.loads(output_path.read_text(encoding="utf-8"))
+        self.assertEqual(code, 3)
+        self.assertEqual(payload["total_cases"], 1)
+        self.assertEqual(json.loads(output), payload)
+
+    def test_output_parent_directory_must_exist(self):
+        with tempfile.TemporaryDirectory() as directory:
+            missing = Path(directory) / "missing" / "report.txt"
+            with self.assertRaises(SystemExit) as context:
+                cli.main(["--output", str(missing)])
+        self.assertEqual(context.exception.code, 2)
+
+    def test_json_output_file_never_contains_response_text(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "report.json"
+            _output, code = _run_cli(
+                [
+                    "--format",
+                    "json",
+                    "--case",
+                    "response-architecture-files-not-names",
+                    "--output",
+                    str(output_path),
+                ],
+                ClaudeInvocationObservation(
+                    available=True,
+                    response_text="Public final response",
+                    observed_skill="arf-academic:architecture-review",
+                    process_result=ClaudeInvocationResult(0, "", ""),
+                    raw_response_available=True,
+                ),
+            )
+            written = output_path.read_text(encoding="utf-8")
+        self.assertEqual(code, 1)
+        self.assertNotIn("Public final response", written)
+
+    def test_show_responses_text_output_file_may_contain_public_response(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output_path = Path(directory) / "report.txt"
+            _output, code = _run_cli(
+                [
+                    "--case",
+                    "response-architecture-files-not-names",
+                    "--show-responses",
+                    "--output",
+                    str(output_path),
+                ],
+                ClaudeInvocationObservation(
+                    available=True,
+                    response_text="Public final response",
+                    observed_skill="arf-academic:architecture-review",
+                    process_result=ClaudeInvocationResult(0, "", ""),
+                    raw_response_available=True,
+                ),
+            )
+            written = output_path.read_text(encoding="utf-8")
+        self.assertEqual(code, 1)
+        self.assertIn("Public final response", written)
 
 
 def _run_cli(argv, observation):

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import re
 
 from benchmark.adapters.claude_code.enums import (
+    ClaudeCaseArtifactRequirement,
     ClaudeEvaluationStatus,
     ResponseMarkerMatchMode,
 )
@@ -63,6 +64,9 @@ class ClaudeAdapterCase:
     response_forbidden_regexes: tuple[str, ...] = ()
     tags: tuple[str, ...] = ()
     notes: str | None = None
+    artifact_requirement: ClaudeCaseArtifactRequirement = (
+        ClaudeCaseArtifactRequirement.NONE
+    )
 
     def __post_init__(self) -> None:
         _require_non_empty(self.identifier, "identifier")
@@ -95,6 +99,10 @@ class ClaudeAdapterCase:
         _validate_unique_strings(self.tags, "tags")
         if self.notes is not None:
             _require_non_empty(self.notes, "notes")
+        if not isinstance(self.artifact_requirement, ClaudeCaseArtifactRequirement):
+            raise ClaudeAdapterEvaluationValidationError(
+                "artifact_requirement must be a ClaudeCaseArtifactRequirement"
+            )
 
 
 @dataclass(frozen=True)

@@ -1,6 +1,7 @@
 import unittest
 
 from benchmark.adapters.claude_code.enums import (
+    ClaudeCaseArtifactRequirement,
     ClaudeEvaluationDimension,
     ClaudeEvaluationStatus,
     ResponseMarkerMatchMode,
@@ -29,6 +30,21 @@ class ClaudeAdapterEvaluationModelTests(unittest.TestCase):
         self.assertEqual(
             {member.name: member.value for member in ResponseMarkerMatchMode},
             {"ANY": "any", "ALL": "all"},
+        )
+        self.assertEqual(
+            {member.name: member.value for member in ClaudeCaseArtifactRequirement},
+            {"NONE": "none", "OPTIONAL": "optional", "REQUIRED": "required"},
+        )
+
+    def test_case_artifact_requirement_defaults_to_none(self):
+        case = ClaudeAdapterCase(
+            identifier="case",
+            prompt="Prompt",
+            expected_skill="skill",
+        )
+        self.assertIs(
+            case.artifact_requirement,
+            ClaudeCaseArtifactRequirement.NONE,
         )
 
     def test_valid_marker_any(self):

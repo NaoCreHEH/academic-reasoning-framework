@@ -31,6 +31,9 @@
 - Claude Code plugin foundation implemented
 - UML, Python, PFE, architecture, and assessment adapter foundation implemented
 - Live Claude Code adapter evaluation harness implemented
+- First complete 16-case live matrix captured as evidence
+- No wrong dispatch observed among 13 observable dispatch passes in that run
+- Missing-artifact dispatch observation remains under investigation
 - Live adapter evaluation has begun, with observability instrumentation being
   refined from actual run evidence
 - Observed live cases are being converted into targeted adapter and benchmark
@@ -39,6 +42,7 @@
   adapter mechanism beyond native skills
 - Evaluate post-dispatch adherence of shared versus skill-local ARF contracts
   across the full live case set
+- Broader repeated live runs across model and CLI versions remain outstanding
 - Real adapter evaluation remains environment-dependent until run against an
   observable Claude Code invocation
 

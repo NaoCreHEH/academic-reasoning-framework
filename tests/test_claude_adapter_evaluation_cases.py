@@ -1,6 +1,7 @@
 import unittest
 
 from benchmark.adapters.claude_code.cases import CLAUDE_ADAPTER_CASES
+from benchmark.adapters.claude_code.enums import ClaudeCaseArtifactRequirement
 
 
 class ClaudeAdapterEvaluationCasesTests(unittest.TestCase):
@@ -52,7 +53,7 @@ class ClaudeAdapterEvaluationCasesTests(unittest.TestCase):
             case.response_forbidden_regexes,
         )
         self.assertIn(
-            r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",
+            r"\bconfiance\b(?:(?!\.\s+[A-Z])[\s\S]){0,80}\d{1,3}\s*%",
             case.response_forbidden_regexes,
         )
 
@@ -105,6 +106,35 @@ class ClaudeAdapterEvaluationCasesTests(unittest.TestCase):
         case = _case("response-python-no-oop")
         self.assertIn("cree une classe", case.response_forbidden_patterns)
         self.assertIn("object-oriented solution", case.response_forbidden_patterns)
+
+    def test_artifact_requirement_metadata_for_builtin_cases(self):
+        self.assertIs(
+            _case("dispatch-uml-exam").artifact_requirement,
+            ClaudeCaseArtifactRequirement.REQUIRED,
+        )
+        self.assertIs(
+            _case("dispatch-python-question-bank").artifact_requirement,
+            ClaudeCaseArtifactRequirement.REQUIRED,
+        )
+        self.assertIs(
+            _case("dispatch-python-mcq").artifact_requirement,
+            ClaudeCaseArtifactRequirement.NONE,
+        )
+        self.assertIs(
+            _case("response-architecture-files-not-names").artifact_requirement,
+            ClaudeCaseArtifactRequirement.NONE,
+        )
+
+    def test_missing_artifact_markers_exist_on_required_dispatch_cases(self):
+        uml_markers = {
+            marker.identifier for marker in _case("dispatch-uml-exam").response_markers
+        }
+        python_markers = {
+            marker.identifier
+            for marker in _case("dispatch-python-question-bank").response_markers
+        }
+        self.assertIn("missing-diagram-boundary", uml_markers)
+        self.assertIn("missing-submission-boundary", python_markers)
 
 
 def _case(identifier):

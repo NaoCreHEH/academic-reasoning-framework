@@ -103,6 +103,48 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         self.assertEqual(failed_markers, ("insufficient-domain-evidence", "domain-rule-resolution"))
         self.assertEqual(matches, ())
 
+    def test_uml_choice_not_automatic_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-uml-choice-not-error",
+            "Non, ce n'est pas automatique. Cela depend du cycle de vie.",
+        )
+
+    def test_uml_choice_simple_association_correct_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-uml-choice-not-error",
+            "L'association simple est correcte si Chanson peut etre partage.",
+        )
+
+    def test_uml_choice_not_error_in_itself_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-uml-choice-not-error",
+            (
+                "Votre association simple n'est en tout cas pas une erreur en soi. "
+                "Il faut verifier le cycle de vie."
+            ),
+        )
+
+    def test_uml_choice_lifecycle_semantics_wording_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-uml-choice-not-error",
+            "La composition depend de la semantique de cycle de vie.",
+        )
+
+    def test_uml_mandatory_composition_answer_fails(self):
+        status, _failed_markers, matches = _evaluate_response(
+            _adapter_case("response-uml-choice-not-error"),
+            "La composition est obligatoire. Cela depend du cycle de vie.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertIn("la composition est obligatoire", matches)
+
+    def test_uml_certain_association_error_answer_fails(self):
+        status, _failed_markers, _matches = _evaluate_response(
+            _adapter_case("response-uml-choice-not-error"),
+            "L'association est une erreur certaine. Cela depend du cycle de vie.",
+        )
+        self.assertEqual(status.value, "failed")
+
     def test_confidence_aucune_partie_wording_passes(self):
         self.assertCaseMarkerPasses(
             "response-confidence-no-percentage",
@@ -154,7 +196,7 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         self.assertEqual(status.value, "failed")
         self.assertEqual(
             matches,
-            (r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",),
+            (r"\bconfiance\b(?:(?!\.\s+[A-Z])[\s\S]){0,80}\d{1,3}\s*%",),
         )
 
     def test_confidence_before_percentage_regex_catches_common_forms(self):
@@ -170,7 +212,7 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
                 status, _failed_markers, matches = _evaluate_response(case, response)
                 self.assertEqual(status.value, "failed")
                 self.assertIn(
-                    r"\bconfiance\b(?:(?!\.\s+[A-ZÀ-Ý])[\s\S]){0,80}\d{1,3}\s*%",
+                    r"\bconfiance\b(?:(?!\.\s+[A-Z])[\s\S]){0,80}\d{1,3}\s*%",
                     matches,
                 )
 
@@ -243,11 +285,59 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
     def test_professional_skills_wording_does_not_trigger_internal_narration(self):
         passing_responses = (
             "Sans rapport, non evaluable. L'etudiant doit developper ses skills techniques.",
+            "Sans rapport, non evaluable. Les soft skills sont importantes.",
             "Sans rapport, non evaluable. Cette competence est importante.",
         )
         for response in passing_responses:
             with self.subTest(response=response):
                 self.assertCaseMarkerPasses("response-confidence-no-percentage", response)
+
+    def test_direct_named_skill_narration_fails(self):
+        failing_responses = (
+            "Je n'ai trouve que le skill `pfe-review` lui-meme.",
+            "C'est ce que le skill `pfe-review` est cense examiner.",
+            "J'invoquerai le skill `arf-academic:pfe-review` dessus.",
+            "I will invoke the skill for this.",
+            "I am using the arf-academic:pfe-review adapter.",
+        )
+        for response in failing_responses:
+            with self.subTest(response=response):
+                status, _failed_markers, matches = _evaluate_response(
+                    _adapter_case("response-confidence-no-percentage"),
+                    f"Sans rapport, non evaluable. {response}",
+                )
+                self.assertEqual(status.value, "failed")
+                self.assertTrue(matches)
+
+    def test_missing_diagram_boundary_marker_passes(self):
+        self.assertCaseMarkerPasses(
+            "dispatch-uml-exam",
+            "Je n'ai pas recu de diagramme; il me faut le diagramme pour identifier les erreurs reelles plutot que d'en inventer.",
+        )
+
+    def test_missing_submission_boundary_marker_passes(self):
+        self.assertCaseMarkerPasses(
+            "dispatch-python-question-bank",
+            "Je n'ai pas encore le contenu de la soumission Python; colle directement le code ou indique le chemin du fichier.",
+        )
+
+    def test_invented_uml_errors_do_not_satisfy_missing_diagram_marker(self):
+        status, failed_markers, matches = _evaluate_response(
+            _adapter_case("dispatch-uml-exam"),
+            "Voici cinq erreurs UML inventees.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ("missing-diagram-boundary",))
+        self.assertEqual(matches, ())
+
+    def test_generic_python_questions_do_not_satisfy_missing_submission_marker(self):
+        status, failed_markers, matches = _evaluate_response(
+            _adapter_case("dispatch-python-question-bank"),
+            "Voici quinze questions generiques sur Python.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ("missing-submission-boundary",))
+        self.assertEqual(matches, ())
 
     def assertMarkerPasses(self, pattern, response):
         status, failed_markers, matches = _evaluate_response(_case(pattern), response)
