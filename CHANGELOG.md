@@ -30,6 +30,9 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Offline Claude adapter multi-run analytics for JSON live reports, including
+  infrastructure classification, run usability, per-case stability summaries,
+  text/JSON reporting, and synthetic regression fixtures
 - Claude Code adapter evaluation harness for live dispatch and response-contract checks
 - Reusable Claude live-evaluation serializer and optional UTF-8 report output
 - Missing-lifecycle-evidence UML live regression case for association versus

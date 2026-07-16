@@ -52,6 +52,17 @@ passes. Use `--show-responses` only for local diagnostics where public response
 evidence is needed; do not use it for automated logs containing sensitive
 student data.
 
+Offline multi-run analytics can summarize existing live JSON reports without
+invoking Claude:
+
+```text
+python scripts/analyze_claude_adapter_runs.py live-runs
+```
+
+Live-run JSON files should not automatically be committed. They may contain
+local evidence, diagnostics, or environment-specific details that need review
+before sharing.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

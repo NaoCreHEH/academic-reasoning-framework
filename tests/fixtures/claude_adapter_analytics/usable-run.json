@@ -1,0 +1,48 @@
+{
+  "total_cases": 4,
+  "dispatch_passed": 3,
+  "dispatch_failed": 0,
+  "dispatch_skipped": 1,
+  "response_passed": 1,
+  "response_failed": 1,
+  "response_skipped": 2,
+  "fully_successful_cases": 2,
+  "results": [
+    {
+      "case_identifier": "dispatch-python-mcq",
+      "dispatch_status": "passed",
+      "response_contract_status": "skipped",
+      "observed_skill": "arf-academic:exam-generation",
+      "failed_markers": [],
+      "matched_forbidden_patterns": [],
+      "diagnostic": "observed arf-academic:exam-generation"
+    },
+    {
+      "case_identifier": "dispatch-uml-exam",
+      "dispatch_status": "skipped",
+      "response_contract_status": "skipped",
+      "observed_skill": null,
+      "failed_markers": [],
+      "matched_forbidden_patterns": [],
+      "diagnostic": "skill identity not observable"
+    },
+    {
+      "case_identifier": "response-confidence-no-percentage",
+      "dispatch_status": "passed",
+      "response_contract_status": "failed",
+      "observed_skill": "arf-academic:pfe-review",
+      "failed_markers": [],
+      "matched_forbidden_patterns": ["confidence percentage pattern"],
+      "diagnostic": "observed arf-academic:pfe-review; matched forbidden pattern"
+    },
+    {
+      "case_identifier": "response-python-no-oop",
+      "dispatch_status": "passed",
+      "response_contract_status": "passed",
+      "observed_skill": "arf-academic:python-teaching",
+      "failed_markers": [],
+      "matched_forbidden_patterns": [],
+      "diagnostic": "observed arf-academic:python-teaching; response contract passed"
+    }
+  ]
+}
