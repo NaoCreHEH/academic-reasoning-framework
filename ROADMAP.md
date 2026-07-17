@@ -46,6 +46,17 @@
 - Real adapter evaluation remains environment-dependent until run against an
   observable Claude Code invocation
 
+## v0.6 - Analytics and reproducibility
+
+- Multi-run JSON aggregation foundation implemented
+- Behavioral versus infrastructure failure separation implemented
+- Per-case dispatch and response stability summaries implemented
+- Remaining: HTML visualization
+- Remaining: repeated-run orchestration
+- Remaining: model/CLI metadata capture
+- Remaining: cross-model comparison
+- Remaining: statistical methodology
+
 ## v1.0 — Public release
 
 - Stable RFC set

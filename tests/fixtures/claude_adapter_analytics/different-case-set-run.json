@@ -1,0 +1,21 @@
+{
+  "total_cases": 1,
+  "dispatch_passed": 1,
+  "dispatch_failed": 0,
+  "dispatch_skipped": 0,
+  "response_passed": 0,
+  "response_failed": 0,
+  "response_skipped": 1,
+  "fully_successful_cases": 1,
+  "results": [
+    {
+      "case_identifier": "unexpected-new-case",
+      "dispatch_status": "passed",
+      "response_contract_status": "skipped",
+      "observed_skill": "arf-academic:exam-generation",
+      "failed_markers": [],
+      "matched_forbidden_patterns": [],
+      "diagnostic": "observed arf-academic:exam-generation"
+    }
+  ]
+}

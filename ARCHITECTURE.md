@@ -87,6 +87,21 @@ deterministic repository validation.
 Live baseline evidence records observed matrices for review, but it is not a
 CI golden snapshot.
 
+Repeated live JSON reports feed an offline analytics layer:
+
+```text
+live JSON reports
+  -> schema validation
+  -> infrastructure classification
+  -> eligibility filtering
+  -> per-case aggregation
+  -> text/JSON analytics
+```
+
+Offline analytics never invokes a model. Unusable runs remain visible as
+infrastructure evidence, but they are excluded from behavioral stability
+denominators by default.
+
 ### Benchmark
 
 Conformance and regression cases verify that changes improve behavior rather than merely changing wording.
