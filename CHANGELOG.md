@@ -6,6 +6,9 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- Claude live-evaluation confidence percentage detection now ignores explicit
+  refusals or counterfactual rejections such as "ce ne serait pas 0%" while
+  still rejecting asserted numerical confidence scores
 - Claude live-evaluation cases now include marker hardening from observed
   responses, conceptual case isolation, UML calibration guidance, and an adapter
   non-narration rule for internal skill/reference wording

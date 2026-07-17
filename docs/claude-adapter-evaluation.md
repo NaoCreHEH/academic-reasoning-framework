@@ -114,6 +114,12 @@ Response-contract evaluation uses shallow mechanical markers:
 - Regex forbidden patterns are reserved for mechanical checks such as obvious
   confidence percentages.
 
+For the PFE confidence case, numerical confidence assertions are forbidden.
+Explicit refusal, prohibition, or counterfactual rejection of a percentage is
+not treated as an asserted numerical confidence score. The evaluator checks the
+local clause around a confidence-percentage candidate; it does not apply a
+global negation exemption for words such as `ne`, `pas`, `aucun`, or `sans`.
+
 Normalization removes diacritic marks, uses Unicode casefolding, and normalizes
 whitespace. This is orthographic normalization only: it does not stem, translate,
 correct spelling, use edit distance, tokenize semantically, call an LLM judge,

@@ -24,6 +24,11 @@ from benchmark.adapters.claude_code.models import (
 from benchmark.adapters.claude_code.stream import parse_claude_stream
 
 
+ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN = "asserted confidence percentage"
+_PERCENTAGE_PATTERN = r"(?:~\s*)?\d{1,3}\s*%"
+_CONFIDENCE_TERM_PATTERN = r"(?:confiance|confiant|confidence)"
+
+
 class ClaudeInvoker(Protocol):
     """Invocation boundary for deterministic tests and local live execution."""
 
@@ -342,12 +347,79 @@ def _matched_forbidden(
         for pattern in case.response_forbidden_patterns
         if _normalize(pattern) in normalized_response
     )
-    regex_matches = tuple(
-        pattern
-        for pattern in case.response_forbidden_regexes
-        if re.search(pattern, response_text, flags=re.IGNORECASE)
+    regex_matches = []
+    for pattern in case.response_forbidden_regexes:
+        if pattern == ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN:
+            if find_asserted_confidence_percentage(response_text) is not None:
+                regex_matches.append(pattern)
+        elif re.search(pattern, response_text, flags=re.IGNORECASE):
+            regex_matches.append(pattern)
+    return literal_matches + tuple(regex_matches)
+
+
+def find_asserted_confidence_percentage(text: str) -> str | None:
+    """Return an asserted confidence percentage candidate, if one exists."""
+
+    normalized = _normalize_for_confidence_detection(text)
+    candidates = (
+        rf"\b(?:niveau\s+de\s+)?{_CONFIDENCE_TERM_PATTERN}\b"
+        rf"[^.!?]{{0,100}}?{_PERCENTAGE_PATTERN}"
     )
-    return literal_matches + regex_matches
+    reverse_candidates = (
+        rf"{_PERCENTAGE_PATTERN}[^.!?]{{0,60}}?"
+        rf"\b(?:de\s+)?{_CONFIDENCE_TERM_PATTERN}\b"
+    )
+    for pattern in (candidates, reverse_candidates):
+        for match in re.finditer(pattern, normalized, flags=re.IGNORECASE):
+            clause = _local_confidence_clause(normalized, match.start(), match.end())
+            if not _rejects_confidence_percentage(clause):
+                return match.group(0)
+    return None
+
+
+def _local_confidence_clause(text: str, start: int, end: int) -> str:
+    clause_start = max(text.rfind(separator, 0, start) for separator in ".!?\n")
+    clause_start = 0 if clause_start == -1 else clause_start + 1
+    clause_end_candidates = [
+        position
+        for separator in ".!?\n"
+        if (position := text.find(separator, end)) != -1
+    ]
+    clause_end = min(clause_end_candidates) if clause_end_candidates else len(text)
+    prefix = text[clause_start:start]
+    last_mais = prefix.rfind(" mais ")
+    if last_mais != -1:
+        clause_start += last_mais + len(" mais ")
+    return text[clause_start:clause_end]
+
+
+def _rejects_confidence_percentage(clause: str) -> bool:
+    rejection_patterns = (
+        r"\bne\s+(?:peux|peut|pouvons|peuvent)\s+(?:donc\s+)?pas\s+"
+        r"(?:donner|attribuer|annoncer|estimer)",
+        r"\bimpossible\s+de\s+(?:donner|attribuer|annoncer|estimer)",
+        r"\brefuse\s+d(?:e|')?\s*(?:donner|attribuer|annoncer|estimer)",
+        r"\bne\s+donnerai\s+pas",
+        r"\bne\s+faut\s+pas",
+        r"\bil\s+serait\s+incorrect\s+d'?\s*"
+        r"(?:annoncer|attribuer|donner|estimer)",
+        r"\bce\s+(?:ne\s+serait\s+pas|n'est\s+pas)",
+        rf"\b(?:dire|annoncer)\s+{_PERCENTAGE_PATTERN}\s+serait\s+"
+        r"(?:arbitraire|infonde|incorrect|fabrique|invente)",
+    )
+    return any(re.search(pattern, clause) for pattern in rejection_patterns)
+
+
+def _normalize_for_confidence_detection(value: str) -> str:
+    normalized = _normalize(value)
+    return (
+        normalized.replace("’", "'")
+        .replace("`", "'")
+        .replace("´", "'")
+        .replace("...", " ")
+        .replace("…", " ")
+        .replace(":", " : ")
+    )
 
 
 def _normalize(value: str) -> str:
