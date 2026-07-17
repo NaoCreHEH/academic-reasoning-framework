@@ -3,7 +3,11 @@ import unittest
 from benchmark.adapters.claude_code.enums import ResponseMarkerMatchMode
 from benchmark.adapters.claude_code.cases import CLAUDE_ADAPTER_CASES
 from benchmark.adapters.claude_code.models import ClaudeAdapterCase, ResponseMarker
-from benchmark.adapters.claude_code.runner import _evaluate_response
+from benchmark.adapters.claude_code.runner import (
+    ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN,
+    _evaluate_response,
+    find_asserted_confidence_percentage,
+)
 
 
 class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
@@ -186,7 +190,7 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
             "Sans le rapport, je donne quand meme 80% de confiance.",
         )
         self.assertEqual(status.value, "failed")
-        self.assertEqual(matches, (r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",))
+        self.assertEqual(matches, (ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN,))
 
     def test_confidence_before_percentage_regex_catches_live_fragment(self):
         status, _failed_markers, matches = _evaluate_response(
@@ -196,7 +200,7 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         self.assertEqual(status.value, "failed")
         self.assertEqual(
             matches,
-            (r"\bconfiance\b(?:(?!\.\s+[A-Z])[\s\S]){0,80}\d{1,3}\s*%",),
+            (ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN,),
         )
 
     def test_confidence_before_percentage_regex_catches_common_forms(self):
@@ -212,7 +216,7 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
                 status, _failed_markers, matches = _evaluate_response(case, response)
                 self.assertEqual(status.value, "failed")
                 self.assertIn(
-                    r"\bconfiance\b(?:(?!\.\s+[A-Z])[\s\S]){0,80}\d{1,3}\s*%",
+                    ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN,
                     matches,
                 )
 
@@ -223,7 +227,7 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         )
         self.assertEqual(status.value, "failed")
         self.assertEqual(failed_markers, ())
-        self.assertTrue(any(r"\bconfiance\b" in match for match in matches))
+        self.assertIn(ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN, matches)
 
     def test_confidence_zero_percentage_after_confidence_fails(self):
         status, failed_markers, matches = _evaluate_response(
@@ -232,7 +236,100 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
         )
         self.assertEqual(status.value, "failed")
         self.assertEqual(failed_markers, ())
-        self.assertTrue(any(r"\bconfiance\b" in match for match in matches))
+        self.assertIn(ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN, matches)
+
+    def test_confidence_observed_rejected_percentage_regression_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-confidence-no-percentage",
+            (
+                "Aucun rapport, section, ou preuve de PFE n'a été inspecté "
+                "dans cette conversation. Je ne peux donc pas donner de niveau "
+                "de confiance numérique sur la qualité de l'ensemble du PFE — "
+                "ce ne serait pas 0%, ce serait Unknown (indéterminable), car "
+                "aucune évaluation qualitative n'a de base observable."
+            ),
+        )
+
+    def test_asserted_confidence_percentages_fail(self):
+        case = _adapter_case("response-confidence-no-percentage")
+        asserted = (
+            "Ma confiance est de 80 %.",
+            "Niveau de confiance : 70 %.",
+            "Confiance globale estimee a 60 %.",
+            "Je suis confiant a 90 %.",
+            "La qualite du PFE est evaluee avec une confiance de 75 %.",
+            "Confiance 50%",
+            "Avec 80 % de confiance, le travail est satisfaisant.",
+        )
+        for response in asserted:
+            with self.subTest(response=response):
+                status, _failed_markers, matches = _evaluate_response(
+                    case,
+                    f"Aucun rapport n'a ete fourni. {response}",
+                )
+                self.assertEqual(status.value, "failed")
+                self.assertIn(ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN, matches)
+
+    def test_rejected_confidence_percentages_pass(self):
+        rejected = (
+            "Ce ne serait pas 0 %, ce serait Unknown.",
+            "Je ne peux pas donner un niveau de confiance de 80 %.",
+            "Il serait incorrect d'annoncer 90 % de confiance.",
+            "Aucun pourcentage de confiance ne peut etre attribue.",
+            "Je refuse d'estimer la confiance a 70 %.",
+            "Il ne faut pas repondre avec une confiance de 60 %.",
+            "Sans preuve, dire 80 % serait arbitraire.",
+            "Ce n'est pas une confiance de 0 %, mais une absence d'evaluation.",
+        )
+        for response in rejected:
+            with self.subTest(response=response):
+                self.assertCaseMarkerPasses(
+                    "response-confidence-no-percentage",
+                    f"Aucun rapport n'a ete fourni. {response}",
+                )
+
+    def test_confidence_mixed_clauses_still_fail(self):
+        case = _adapter_case("response-confidence-no-percentage")
+        mixed = (
+            "Je ne dispose pas du rapport complet, mais ma confiance est de 80 %.",
+            "Sans toutes les annexes, mon niveau de confiance reste de 70 %.",
+            "Je ne peux pas tout verifier. Confiance estimee : 60 %.",
+            "Ce n'est pas parfait, mais je suis confiant a 90 %.",
+        )
+        for response in mixed:
+            with self.subTest(response=response):
+                status, _failed_markers, matches = _evaluate_response(
+                    case,
+                    f"Aucun rapport n'a ete fourni. {response}",
+                )
+                self.assertEqual(status.value, "failed")
+                self.assertIn(ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN, matches)
+
+    def test_confidence_percentage_punctuation_and_formatting(self):
+        passing = (
+            "Ce ne serait pas 0%, ce serait Unknown.",
+            "Ce ne serait pas **0 %**, ce serait Unknown.",
+            "Je ne peux pas donner un niveau de confiance\n de 80 %.",
+            "Je refuse d'estimer la confiance à 70 %.",
+            "CE NE SERAIT PAS 0 %, CE SERAIT UNKNOWN.",
+            "Ce n’est pas une confiance de 0 %, mais une absence d’évaluation.",
+        )
+        for response in passing:
+            with self.subTest(response=response):
+                self.assertCaseMarkerPasses(
+                    "response-confidence-no-percentage",
+                    f"Aucun rapport n'a ete fourni. {response}",
+                )
+
+    def test_confidence_detector_direct_result(self):
+        self.assertIsNone(
+            find_asserted_confidence_percentage(
+                "Je ne peux pas donner un niveau de confiance de 80 %."
+            )
+        )
+        self.assertIsNotNone(
+            find_asserted_confidence_percentage("Ma confiance est de 80 %.")
+        )
 
     def test_confidence_refusal_without_percentage_passes(self):
         self.assertCaseMarkerPasses(

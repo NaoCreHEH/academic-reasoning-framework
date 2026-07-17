@@ -1,6 +1,7 @@
 import unittest
 
 from benchmark.adapters.claude_code.cases import CLAUDE_ADAPTER_CASES
+from benchmark.adapters.claude_code.runner import ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN
 from benchmark.adapters.claude_code.enums import ClaudeCaseArtifactRequirement
 
 
@@ -49,11 +50,7 @@ class ClaudeAdapterEvaluationCasesTests(unittest.TestCase):
     def test_confidence_case_contains_percentage_regex(self):
         case = _case("response-confidence-no-percentage")
         self.assertIn(
-            r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",
-            case.response_forbidden_regexes,
-        )
-        self.assertIn(
-            r"\bconfiance\b(?:(?!\.\s+[A-Z])[\s\S]){0,80}\d{1,3}\s*%",
+            ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN,
             case.response_forbidden_regexes,
         )
 

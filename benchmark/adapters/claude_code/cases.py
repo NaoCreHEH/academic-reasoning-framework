@@ -5,6 +5,7 @@ from benchmark.adapters.claude_code.enums import (
     ResponseMarkerMatchMode,
 )
 from benchmark.adapters.claude_code.models import ClaudeAdapterCase, ResponseMarker
+from benchmark.adapters.claude_code.runner import ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN
 
 
 UML = "arf-academic:uml-analysis"
@@ -383,8 +384,7 @@ CLAUDE_ADAPTER_CASES: tuple[ClaudeAdapterCase, ...] = (
         ),
         response_forbidden_patterns=INTERNAL_ADAPTER_NARRATION_FORBIDDEN_PATTERNS,
         response_forbidden_regexes=(
-            r"\b\d{1,3}\s*%\s*(?:de\s+)?confiance\b",
-            r"\bconfiance\b(?:(?!\.\s+[A-Z])[\s\S]){0,80}\d{1,3}\s*%",
+            ASSERTED_CONFIDENCE_PERCENTAGE_PATTERN,
             *INTERNAL_ADAPTER_NARRATION_FORBIDDEN_REGEXES,
         ),
         tags=("response-contract", "pfe", "confidence", "french"),
