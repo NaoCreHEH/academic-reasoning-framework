@@ -333,8 +333,54 @@ def _marker_matches(marker: ResponseMarker, response_text: str) -> bool:
         _normalize(pattern) in normalized_response for pattern in marker.patterns
     ]
     if marker.match_mode is ResponseMarkerMatchMode.ANY:
-        return any(matched)
+        return any(matched) or _semantic_response_marker_matches(
+            marker.identifier,
+            normalized_response,
+        )
     return all(matched)
+
+
+def _semantic_response_marker_matches(identifier: str, normalized_response: str) -> bool:
+    if identifier == "learner-facing":
+        return _matches_learner_facing_marker(normalized_response)
+    if identifier == "structure-not-proof":
+        return _matches_structure_not_proof_marker(normalized_response)
+    return False
+
+
+def _matches_learner_facing_marker(normalized_response: str) -> bool:
+    learner_patterns = (
+        r"\b(?:colle|montre|partage|envoie|poste)(?:\s+moi|-moi)?\s+ton\s+code\b",
+        r"\bpeux[-\s]tu\s+(?:me\s+)?(?:partager|montrer|envoyer)\s+ton\s+code\b",
+        r"\bje\s+(?:regarderai|vais\s+regarder|pourrai\s+regarder)\s+ton\s+code\b",
+        r"\bje\s+pourrai\s+voir\s+ce\s+qui\s+cloche\b",
+    )
+    return any(re.search(pattern, normalized_response) for pattern in learner_patterns)
+
+
+def _matches_structure_not_proof_marker(normalized_response: str) -> bool:
+    architecture_patterns = (
+        r"\b(?:les\s+)?dossiers\s+(?:sont|restent)\s+(?:des\s+)?conventions\b",
+        r"\b(?:nommage|noms?)\b.{0,50}\b(?:n'est|ne\s+sont|pas)\b"
+        r".{0,40}\b(?:preuve|preuves)\b",
+        r"\b(?:folder\s+names?|naming)\b.{0,50}\b"
+        r"(?:not\s+proof|insufficient|not\s+enough)\b",
+        r"\barchitecture\b.{0,60}\b(?:jugee?|s'evalue|s'apprecie)\b"
+        r".{0,40}\bdependances\b",
+        r"\barchitecture\s+is\s+judged\s+by\s+dependencies\b",
+        r"\bfolder\s+names\s+alone\s+are\s+insufficient\b",
+        r"\bstructure\s+alone\s+does\s+not\s+demonstrate\s+quality\b",
+        r"\bstructure\s+seule\b.{0,50}\b(?:ne\s+)?(?:demontre|prouve)\b"
+        r".{0,20}\bpas\b",
+        r"\b(?:dependances|direction\s+des\s+dependances)\b.{0,80}\b"
+        r"(?:couplage|testabilite)\b",
+        r"\b(?:couplage|testabilite)\b.{0,80}\b"
+        r"(?:dependances|direction\s+des\s+dependances)\b",
+    )
+    return any(
+        re.search(pattern, normalized_response)
+        for pattern in architecture_patterns
+    )
 
 
 def _matched_forbidden(
