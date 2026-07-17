@@ -61,10 +61,44 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
             "la structure de dossiers est une hypothese sur l'architecture, pas une preuve",
         )
 
+    def test_architecture_observed_equivalent_structure_not_proof_response_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-architecture-files-not-names",
+            (
+                "Les dossiers sont des conventions, pas une preuve de qualite. "
+                "Le nommage n'est pas une preuve non plus : l'architecture se "
+                "juge par les dependances, la direction des dependances, le "
+                "couplage et la testabilite."
+            ),
+        )
+
+    def test_architecture_structure_not_proof_equivalent_wordings_pass(self):
+        responses = (
+            "Folders are conventions; naming is not proof.",
+            "Architecture is judged by dependencies, not by folder names.",
+            "Folder names alone are insufficient.",
+            "Structure alone does not demonstrate quality.",
+            "La structure seule ne demontre pas la qualite.",
+        )
+        for response in responses:
+            with self.subTest(response=response):
+                self.assertCaseMarkerPasses(
+                    "response-architecture-files-not-names",
+                    response,
+                )
+
     def test_architecture_unrelated_folder_presence_fails(self):
         status, failed_markers, _matches = _evaluate_response(
             _adapter_case("response-architecture-files-not-names"),
             "Les dossiers services et controllers sont presents.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ("structure-not-proof",))
+
+    def test_architecture_generic_quality_explanation_still_fails(self):
+        status, failed_markers, _matches = _evaluate_response(
+            _adapter_case("response-architecture-files-not-names"),
+            "Une bonne architecture limite le couplage et ameliore la testabilite.",
         )
         self.assertEqual(status.value, "failed")
         self.assertEqual(failed_markers, ("structure-not-proof",))
@@ -148,6 +182,37 @@ class ClaudeAdapterResponseNormalizationTests(unittest.TestCase):
             "L'association est une erreur certaine. Cela depend du cycle de vie.",
         )
         self.assertEqual(status.value, "failed")
+
+    def test_python_observed_equivalent_learner_facing_response_passes(self):
+        self.assertCaseMarkerPasses(
+            "response-python-no-oop",
+            (
+                "Colle ton code ici. Je regarderai ton code et je pourrai "
+                "voir ce qui cloche. En attendant, verifie les erreurs "
+                "frequentes : initialiser la somme, parcourir la liste avec "
+                "une boucle, puis diviser par le nombre de notes."
+            ),
+        )
+
+    def test_python_learner_facing_equivalent_wordings_pass(self):
+        responses = (
+            "Colle ton code et on corrigera avec une boucle.",
+            "Montre-moi ton code pour que je puisse corriger la boucle.",
+            "Peux-tu partager ton code ? Je resterai en Python procedural.",
+            "Je regarderai ton code sans utiliser la POO.",
+            "Je pourrai voir ce qui cloche dans ta boucle.",
+        )
+        for response in responses:
+            with self.subTest(response=response):
+                self.assertCaseMarkerPasses("response-python-no-oop", response)
+
+    def test_python_generic_procedural_explanation_still_fails_learner_marker(self):
+        status, failed_markers, _matches = _evaluate_response(
+            _adapter_case("response-python-no-oop"),
+            "Une boucle for permet de calculer une somme puis une moyenne.",
+        )
+        self.assertEqual(status.value, "failed")
+        self.assertEqual(failed_markers, ("learner-facing",))
 
     def test_confidence_aucune_partie_wording_passes(self):
         self.assertCaseMarkerPasses(
